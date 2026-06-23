@@ -3,69 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>五行命局能量场 V7 (真·排盘版)</title>
+    <title>五行命局能量场 V8 (光效飞升版)</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #030508; font-family: -apple-system, sans-serif; color: #c9d1d9; }
+        body { margin: 0; overflow: hidden; background-color: #020305; font-family: -apple-system, sans-serif; color: #c9d1d9; }
         #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
         
         #ui-layer { 
             position: absolute; top: 40px; left: 50%; transform: translateX(-50%); z-index: 10; 
-            background: rgba(13, 17, 23, 0.7); backdrop-filter: blur(15px); 
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; width: 90%; max-width: 340px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8); transition: all 0.3s ease;
+            background: rgba(10, 14, 20, 0.6); backdrop-filter: blur(20px); 
+            border: 1px solid rgba(88, 166, 255, 0.2); border-radius: 16px; padding: 20px; width: 90%; max-width: 340px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(88, 166, 255, 0.1); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-        .neon-text { color: #fff; text-shadow: 0 0 10px rgba(88, 166, 255, 0.8); margin: 0; font-size: 18px; font-weight: bold; letter-spacing: 1px; }
-        .sub-text { color: #8b9bb4; font-size: 11px; margin-bottom: 15px; font-family: monospace; }
-        .status-dot { color: #3fb950; animation: pulse 2s infinite; }
+        .neon-text { color: #fff; text-shadow: 0 0 15px #58a6ff, 0 0 30px #58a6ff; margin: 0; font-size: 18px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
+        .sub-text { color: #58a6ff; font-size: 10px; margin-bottom: 15px; font-family: monospace; text-shadow: 0 0 5px rgba(88, 166, 255, 0.5); }
+        .status-dot { color: #00ff44; animation: pulse 1.5s infinite; text-shadow: 0 0 8px #00ff44; }
         
-        /* 隐藏面板按钮 */
-        #toggle-btn { background: none; border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 12px; padding: 4px 8px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
-        #toggle-btn:hover { background: rgba(255,255,255,0.1); }
+        #toggle-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 12px; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: 0.3s; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        #toggle-btn:hover { background: rgba(255,255,255,0.2); box-shadow: 0 0 15px rgba(255,255,255,0.4); }
         
         #form-content { transition: opacity 0.3s ease; }
         .input-group { margin-bottom: 12px; }
-        .input-group label { display: block; font-size: 12px; color: #8b9bb4; margin-bottom: 4px; }
+        .input-group label { display: block; font-size: 11px; color: #8b9bb4; margin-bottom: 4px; letter-spacing: 1px; }
         .input-group input { 
-            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid #30363d; 
-            color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none;
+            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #30363d; 
+            color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none; transition: 0.3s;
         }
-        .input-group input:focus { border-color: #58a6ff; }
+        .input-group input:focus { border-color: #58a6ff; box-shadow: 0 0 10px rgba(88, 166, 255, 0.3); }
         
         button.action-btn {
-            width: 100%; background: linear-gradient(90deg, #1f6feb, #3fb950); 
-            border: none; color: white; padding: 12px; border-radius: 6px; 
-            font-weight: bold; cursor: pointer; transition: opacity 0.3s; margin-top: 5px; font-size: 15px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            width: 100%; background: linear-gradient(135deg, #1f6feb 0%, #00ff44 100%); 
+            border: none; color: #000; padding: 12px; border-radius: 6px; 
+            font-weight: 900; cursor: pointer; transition: 0.3s; margin-top: 5px; font-size: 15px; letter-spacing: 2px; box-shadow: 0 0 20px rgba(0, 255, 68, 0.4);
         }
-        button.action-btn:hover { opacity: 0.8; }
+        button.action-btn:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(0, 255, 68, 0.7); color: #fff; }
 
-        #stats-panel { margin-top: 15px; font-family: monospace; font-size: 12px; display: none; background: rgba(0,0,0,0.5); padding: 12px; border-radius: 8px;}
-        #true-bazi { text-align: center; font-size: 20px; font-weight: bold; color: #58a6ff; letter-spacing: 4px; margin-bottom: 10px; text-shadow: 0 0 8px rgba(88, 166, 255, 0.5); }
+        #stats-panel { margin-top: 15px; font-family: monospace; font-size: 12px; display: none; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+        #true-bazi { text-align: center; font-size: 22px; font-weight: bold; color: #fff; letter-spacing: 6px; margin-bottom: 10px; text-shadow: 0 0 15px #58a6ff, 0 0 30px #58a6ff; }
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,0.1); }
         .stat-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-        .color-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+        .color-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; box-shadow: 0 0 8px currentColor; }
         
-        /* 迷你模式唤醒按钮 */
-        #wake-btn { position: absolute; top: 20px; right: 20px; z-index: 20; display: none; background: rgba(13, 17, 23, 0.8); border: 1px solid #58a6ff; color: #fff; padding: 8px 15px; border-radius: 20px; font-weight: bold; backdrop-filter: blur(5px); cursor: pointer; box-shadow: 0 0 15px rgba(88, 166, 255, 0.4); }
+        #wake-btn { position: absolute; top: 20px; right: 20px; z-index: 20; display: none; background: rgba(10, 14, 20, 0.8); border: 1px solid #58a6ff; color: #58a6ff; padding: 8px 15px; border-radius: 20px; font-weight: bold; backdrop-filter: blur(10px); cursor: pointer; box-shadow: 0 0 20px rgba(88, 166, 255, 0.3); transition: 0.3s; }
+        #wake-btn:hover { background: #58a6ff; color: #000; box-shadow: 0 0 30px rgba(88, 166, 255, 0.6); }
 
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
     </style>
-    <!-- 三维渲染引擎 -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-    <!-- 工业级天文历法库 -->
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.12/lunar.min.js"></script>
 </head>
 <body>
 
-    <button id="wake-btn" onclick="toggleUI(true)">👁️ 展开排盘控制台</button>
+    <button id="wake-btn" onclick="toggleUI(true)">◎ 唤醒控制台</button>
 
     <div id="ui-layer">
         <div class="header-flex">
             <h1 class="neon-text">Alpha-Omega</h1>
-            <button id="toggle-btn" onclick="toggleUI(false)">👁️ 隐藏面板</button>
+            <button id="toggle-btn" onclick="toggleUI(false)">⊝ 隐藏面板</button>
         </div>
-        <p class="sub-text"><span class="status-dot">●</span> 工业级八字历法引擎运行中</p>
+        <p class="sub-text"><span class="status-dot">●</span> 核心阵眼运转中 | 光子渲染拉满</p>
         
         <div id="form-content">
             <div style="display:flex; gap:10px;">
@@ -83,20 +80,20 @@
                 </div>
             </div>
             <div class="input-group">
-                <label>出生时辰 (0-23)</label>
+                <label>时辰 (0-23)</label>
                 <input type="number" id="hour" value="14" min="0" max="23" />
             </div>
             
-            <button class="action-btn" onclick="runCalculation()">推演真·本命气场</button>
+            <button class="action-btn" onclick="runCalculation()">⚡ 拨动命运齿轮</button>
 
             <div id="stats-panel">
                 <div id="true-bazi">庚辰 辛巳 壬戌 癸卯</div>
-                <div style="color:#8b9bb4; margin-bottom: 8px; font-size:10px; text-align:center;">天干地支五行解构占比</div>
-                <div class="stat-row"><span style="color:#ff2200;"><span class="color-dot" style="background:#ff2200;"></span>火 (Fire)</span> <span id="stat-fire">0%</span></div>
-                <div class="stat-row"><span style="color:#00ccff;"><span class="color-dot" style="background:#00ccff;"></span>水 (Water)</span> <span id="stat-water">0%</span></div>
+                <div style="color:#8b9bb4; margin-bottom: 8px; font-size:10px; text-align:center; letter-spacing: 1px;">先天五行解构配比</div>
+                <div class="stat-row"><span style="color:#ff2a00;"><span class="color-dot" style="background:#ff2a00;"></span>火 (Fire)</span> <span id="stat-fire">0%</span></div>
+                <div class="stat-row"><span style="color:#00e5ff;"><span class="color-dot" style="background:#00e5ff;"></span>水 (Water)</span> <span id="stat-water">0%</span></div>
                 <div class="stat-row"><span style="color:#00ff44;"><span class="color-dot" style="background:#00ff44;"></span>木 (Wood)</span> <span id="stat-wood">0%</span></div>
-                <div class="stat-row"><span style="color:#ffea00;"><span class="color-dot" style="background:#ffea00;"></span>金 (Metal)</span> <span id="stat-metal">0%</span></div>
-                <div class="stat-row"><span style="color:#b5824c;"><span class="color-dot" style="background:#b5824c;"></span>土 (Earth)</span> <span id="stat-earth">0%</span></div>
+                <div class="stat-row"><span style="color:#ffe600;"><span class="color-dot" style="background:#ffe600;"></span>金 (Metal)</span> <span id="stat-metal">0%</span></div>
+                <div class="stat-row"><span style="color:#d4a373;"><span class="color-dot" style="background:#d4a373;"></span>土 (Earth)</span> <span id="stat-earth">0%</span></div>
             </div>
         </div>
     </div>
@@ -104,28 +101,28 @@
     <div id="canvas-container"></div>
 
     <script>
-        // UI 交互逻辑
         function toggleUI(show) {
             const uiLayer = document.getElementById('ui-layer');
             const wakeBtn = document.getElementById('wake-btn');
             if (show) {
-                uiLayer.style.display = 'block';
+                uiLayer.style.transform = 'translate(-50%, 0) scale(1)';
+                uiLayer.style.opacity = '1';
+                uiLayer.style.pointerEvents = 'auto';
                 wakeBtn.style.display = 'none';
             } else {
-                uiLayer.style.display = 'none';
+                uiLayer.style.transform = 'translate(-50%, -20px) scale(0.95)';
+                uiLayer.style.opacity = '0';
+                uiLayer.style.pointerEvents = 'none';
                 wakeBtn.style.display = 'block';
             }
         }
 
-        // ==========================================
-        // 核心天干地支映射字典
-        // ==========================================
         const WUXING_COLORS = {
-            '火': new THREE.Color(0xff2200),
-            '水': new THREE.Color(0x00ccff),
-            '木': new THREE.Color(0x00ff44),
-            '金': new THREE.Color(0xffea00),
-            '土': new THREE.Color(0xb5824c)
+            '火': new THREE.Color(0xff2a00), // 更炽热的红
+            '水': new THREE.Color(0x00e5ff), // 更通透的青蓝
+            '木': new THREE.Color(0x00ff44), // 更荧光的绿
+            '金': new THREE.Color(0xffe600), // 更刺眼的金
+            '土': new THREE.Color(0xd4a373)  // 沉稳的琥珀
         };
 
         const CHAR_TO_WUXING = {
@@ -133,179 +130,88 @@
             '子':'水', '丑':'土', '寅':'木', '卯':'木', '辰':'土', '巳':'火', '午':'火', '未':'土', '申':'金', '酉':'金', '戌':'土', '亥':'水'
         };
 
-        // ==========================================
-        // 历法解析引擎
-        // ==========================================
         function calculateRealBazi(year, month, day, hour) {
             try {
                 const solar = Solar.fromYmdHms(year, month, day, hour, 0, 0);
                 const lunar = solar.getLunar();
                 const bazi = lunar.getEightChar();
-                
                 const fullBaziString = bazi.getYear() + bazi.getMonth() + bazi.getDay() + bazi.getTime();
-                const displayString = `${bazi.getYear()} ${bazi.getMonth()} ${bazi.getDay()} ${bazi.getTime()}`;
-
                 let counts = { '火': 0, '水': 0, '木': 0, '金': 0, '土': 0 };
                 for (let i = 0; i < fullBaziString.length; i++) {
-                    const wx = CHAR_TO_WUXING[fullBaziString[i]];
-                    if (wx) counts[wx]++;
+                    if (CHAR_TO_WUXING[fullBaziString[i]]) counts[CHAR_TO_WUXING[fullBaziString[i]]]++;
                 }
-                
                 let weights = {};
-                for (let key in counts) { weights[key] = counts[key] / 8; }
-                
-                return { weights: weights, display: displayString };
-            } catch (err) {
-                alert("历法推演错误，请检查输入的日期是否合法！");
-                return null;
-            }
+                for (let key in counts) weights[key] = counts[key] / 8;
+                return { weights: weights, display: `${bazi.getYear()} ${bazi.getMonth()} ${bazi.getDay()} ${bazi.getTime()}` };
+            } catch (err) { return null; }
         }
 
         // ==========================================
-        // 纯 GLSL 显卡直驱渲染引擎
+        // 核心渲染引擎升级
         // ==========================================
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x030508, 0.002);
+        // 增加雾化浓度，让远处的粒子有隐没感
+        scene.fog = new THREE.FogExp2(0x020305, 0.003);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.set(0, 150, 400);
+        camera.position.set(0, 150, 350); // 镜头拉近一点，增强压迫感
         camera.lookAt(0, 0, 0);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setPixelRatio(window.devicePixelRatio); 
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
         renderer.setSize(window.innerWidth, window.innerHeight);
         container.appendChild(renderer.domElement);
 
-        const particleCount = 4000; 
+        // 🌟 新增：本命阵眼 (中央背景发光矩阵)
+        function createCoreTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+            gradient.addColorStop(0, 'rgba(88, 166, 255, 0.4)'); // 核心高亮
+            gradient.addColorStop(0.3, 'rgba(88, 166, 255, 0.1)'); // 中层光晕
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)'); // 边缘消散
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 512, 512);
+            return new THREE.CanvasTexture(canvas);
+        }
+        
+        const coreGeo = new THREE.PlaneGeometry(600, 600);
+        const coreMat = new THREE.MeshBasicMaterial({
+            map: createCoreTexture(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+        });
+        const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+        coreMesh.rotation.x = -Math.PI / 2; // 平躺在星系中央
+        scene.add(coreMesh);
+
+        // 粒子系统
+        const particleCount = 5000; // 增加粒子数量让光效更饱满
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(particleCount * 3);
         const colors = new Float32Array(particleCount * 3);
         const initialY = new Float32Array(particleCount);
+        const randomOffsets = new Float32Array(particleCount); // 为每个粒子分配随机时间偏移，产生错落的呼吸感
 
         for (let i = 0; i < particleCount; i++) {
             const i3 = i * 3;
-            const radius = Math.random() * 250;
+            // 采用更密集的向心力分布算法
+            const radius = Math.pow(Math.random(), 1.5) * 300; 
             const spinAngle = radius * 0.02; 
             const branchAngle = (Math.floor(Math.random() * 5) / 5) * Math.PI * 2; 
             
-            const randomX = Math.pow(Math.random() - 0.5, 3) * 100;
-            const randomY = Math.pow(Math.random() - 0.5, 3) * 80;
-            const randomZ = Math.pow(Math.random() - 0.5, 3) * 100;
+            const randomX = (Math.random() - 0.5) * 60;
+            const randomY = (Math.random() - 0.5) * 40;
+            const randomZ = (Math.random() - 0.5) * 60;
 
             positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
             positions[i3 + 1] = randomY; 
             positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
             initialY[i] = positions[i3 + 1];
+            randomOffsets[i] = Math.random() * Math.PI * 2; // 随机相位
 
-            // 初始暗蓝色
-            colors[i3] = 0.05; colors[i3 + 1] = 0.2; colors[i3 + 2] = 0.4;
+            colors[i3] = 0.1; colors[i3 + 1] = 0.2; colors[i3 + 2] = 0.3; // 初始待机色
         }
 
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-        const shaderMaterial = new THREE.ShaderMaterial({
-            vertexShader: `
-                attribute vec3 color;
-                varying vec3 vColor;
-                void main() {
-                    vColor = color;
-                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                    gl_PointSize = 1000.0 / -mvPosition.z * ${window.devicePixelRatio.toFixed(1)};
-                    gl_Position = projectionMatrix * mvPosition;
-                }
-            `,
-            fragmentShader: `
-                varying vec3 vColor;
-                void main() {
-                    vec2 pt = gl_PointCoord - vec2(0.5);
-                    float dist = length(pt) * 2.0; 
-                    if (dist > 1.0) discard; 
-                    float core = smoothstep(0.15, 0.0, dist);
-                    float glow = pow(1.0 - dist, 1.5);
-                    vec3 finalColor = vColor * glow * 1.5 + vec3(1.0) * core * 1.2;
-                    gl_FragColor = vec4(finalColor, 1.0);
-                }
-            `,
-            transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
-        });
-
-        const particleSystem = new THREE.Points(geometry, shaderMaterial);
-        scene.add(particleSystem);
-
-        const clock = new THREE.Clock();
-        function animate() {
-            requestAnimationFrame(animate);
-            const elapsedTime = clock.getElapsedTime();
-            
-            particleSystem.rotation.y = elapsedTime * 0.05;
-            
-            const positionsAttribute = geometry.attributes.position;
-            const posArray = positionsAttribute.array;
-            for (let i = 0; i < particleCount; i++) {
-                const i3 = i * 3;
-                posArray[i3 + 1] = initialY[i] + Math.sin(elapsedTime * 2 + posArray[i3]*0.05) * 5;
-            }
-            positionsAttribute.needsUpdate = true;
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        // ==========================================
-        // 核心热更新：数据注入视觉
-        // ==========================================
-        function runCalculation() {
-            const y = parseInt(document.getElementById('year').value);
-            const m = parseInt(document.getElementById('month').value);
-            const d = parseInt(document.getElementById('day').value);
-            const h = parseInt(document.getElementById('hour').value);
-
-            const result = calculateRealBazi(y, m, d, h);
-            if (!result) return;
-            
-            const weights = result.weights;
-
-            // 渲染 UI 数据
-            document.getElementById('stats-panel').style.display = 'block';
-            document.getElementById('true-bazi').innerText = result.display; // 显示真八字汉字
-            
-            document.getElementById('stat-fire').innerText = (weights['火'] * 100).toFixed(1) + '%';
-            document.getElementById('stat-water').innerText = (weights['水'] * 100).toFixed(1) + '%';
-            document.getElementById('stat-wood').innerText = (weights['木'] * 100).toFixed(1) + '%';
-            document.getElementById('stat-metal').innerText = (weights['金'] * 100).toFixed(1) + '%';
-            document.getElementById('stat-earth').innerText = (weights['土'] * 100).toFixed(1) + '%';
-
-            // 修改显存粒子颜色
-            const colorsAttribute = geometry.attributes.color;
-            const colArray = colorsAttribute.array;
-            
-            let colorPool = [];
-            for (let key in weights) {
-                const count = Math.floor(weights[key] * particleCount);
-                for(let k=0; k<count; k++) colorPool.push(WUXING_COLORS[key]);
-            }
-            while(colorPool.length < particleCount) colorPool.push(WUXING_COLORS['土']);
-            
-            colorPool.sort(() => Math.random() - 0.5);
-
-            for (let i = 0; i < particleCount; i++) {
-                const i3 = i * 3;
-                colArray[i3] = colorPool[i].r;
-                colArray[i3 + 1] = colorPool[i].g;
-                colArray[i3 + 2] = colorPool[i].b;
-            }
-            
-            colorsAttribute.needsUpdate = true;
-            particleSystem.rotation.y -= 0.8;
-            particleSystem.rotation.x = (Math.random() - 0.5) * 0.5;
-        }
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
-</body>
-</html>
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3
