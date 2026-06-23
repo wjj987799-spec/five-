@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>五行命局能量场</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #030508; font-family: -apple-system, sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        #ui-layer { position: absolute; top: 30px; left: 30px; z-index: 10; pointer-events: none; }
+        .neon-text { color: #fff; text-shadow: 0 0 15px rgba(255, 255, 255, 0.6); margin: 0; font-size: 24px; font-weight: bold; letter-spacing: 2px; }
+        .sub-text { color: #8b9bb4; font-size: 12px; margin-top: 5px; font-family: monospace; }
+        .status-dot { color: #10b981; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <h1 class="neon-text">先天五行能量场</h1>
+        <p class="sub-text"><span class="status-dot">●</span> 空间引力引擎已就绪 | 尝试滑动鼠标扰动气场</p>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script>
+        // ==========================================
+        // 1. 核心场景初始化
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        // 添加极其微弱的全局雾化效果，增加深邃感
+        scene.fog = new THREE.FogExp2(0x030508, 0.001);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.position.z = 400;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        container.appendChild(renderer.domElement);
+
+        // ==========================================
+        // 2. 五行粒子系统构建 (BufferGeometry)
+        // ==========================================
+        const particleCount = 30000;
+        const geometry = new THREE.BufferGeometry();
+        
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+        const velocities = new Float32Array(particleCount * 3); // 预留物理引擎速度向量
+
+        // 五行色彩定义 (RGB 归一化)
+        const wuXingColors = [
+            new THREE.Color(0xff3300), // 火 (红/橙) - 爆裂向上
+            new THREE.Color(0x00d0ff), // 水 (青/蓝) - 柔和环绕
+            new THREE.Color(0x22ff55), // 木 (翠绿) - 向心生长
+            new THREE.Color(0xfff0a0), // 金 (亮金) - 锐利切割
+            new THREE.Color(0xd4a373)  // 土 (沉淀黄) - 稳固沉底
+        ];
+
+        // 随机分布算法
+        for (let i = 0; i < particleCount; i++) {
+            const i3 = i * 3;
+            // 在球体空间内随机分布
+            const radius = 200 + Math.random() * 150;
+            const theta = Math.random() * 2 * Math.PI;
+            const phi = Math.acos(Math.random() * 2 - 1);
+
+            positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+            positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+            positions[i3 + 2] = radius * Math.cos(phi);
+
+            // 赋予初始动能
+            velocities[i3] = (Math.random() - 0.5) * 0.5;
+            velocities[i3 + 1] = (Math.random() - 0.5) * 0.5;
+            velocities[i3 + 2] = (Math.random() - 0.5) * 0.5;
+
+            // 随机分配五行颜色
+            const color = wuXingColors[Math.floor(Math.random() * wuXingColors.length)];
+            colors[i3] = color.r;
+            colors[i3 + 1] = color.g;
+            colors[i3 + 2] = color.b;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        // 粒子材质 (带发光混合模式)
+        const material = new THREE.PointsMaterial({
+            size: 2.5,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending, // 加色混合，产生发光的高级感
+            depthWrite: false
+        });
+
+        const particleSystem = new THREE.Points(geometry, material);
+        scene.add(particleSystem);
+
+        // ==========================================
+        // 3. 鼠标引力交互接口 (为后续摄像头抓取留 Hook)
+        // ==========================================
+        let mouseX = 0;
+        let mouseY = 0;
+        let targetX = 0;
+        let targetY = 0;
+
+        document.addEventListener('mousemove', (event) => {
+            // 将鼠标坐标映射为空间旋转角度
+            mouseX = (event.clientX - window.innerWidth / 2) * 0.0005;
+            mouseY = (event.clientY - window.innerHeight / 2) * 0.0005;
+        });
+
+        // ==========================================
+        // 4. 渲染循环 (极速推演)
+        // ==========================================
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            // 缓动算法：让粒子场的旋转平滑追随鼠标
+            targetX = mouseX * 0.5;
+            targetY = mouseY * 0.5;
+            
+            particleSystem.rotation.y += 0.002 + (targetX - particleSystem.rotation.y) * 0.05;
+            particleSystem.rotation.x += (targetY - particleSystem.rotation.x) * 0.05;
+
+            // 模拟五行内部的缓慢流转 (通过正弦波扰动 Y 轴)
+            const positionsAttribute = geometry.attributes.position;
+            const posArray = positionsAttribute.array;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                // 让粒子像呼吸一样轻微起伏
+                posArray[i3 + 1] += Math.sin(elapsedTime * 2 + posArray[i3]) * 0.2;
+            }
+            positionsAttribute.needsUpdate = true;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // 自适应窗口大小
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
