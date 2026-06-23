@@ -3,169 +3,278 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>五行命局能量场 V5 (显卡直驱版)</title>
+    <title>五行命局能量场 V6 (算法注魂版)</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #030508; font-family: -apple-system, sans-serif; }
+        body { margin: 0; overflow: hidden; background-color: #030508; font-family: -apple-system, sans-serif; color: #c9d1d9; }
         #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
-        #ui-layer { position: absolute; top: 40px; left: 20px; z-index: 10; pointer-events: none; }
-        .neon-text { color: #fff; text-shadow: 0 0 15px rgba(255, 255, 255, 0.6); margin: 0; font-size: 24px; font-weight: bold; letter-spacing: 2px; }
-        .sub-text { color: #8b9bb4; font-size: 12px; margin-top: 8px; font-family: monospace; }
-        .status-dot { color: #10b981; animation: pulse 2s infinite; }
-        #error-log { color: #ef4444; font-weight: bold; margin-top: 15px; font-size: 14px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 4px; display: none; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        
+        /* 玻璃拟态 UI 面板 */
+        #ui-layer { 
+            position: absolute; top: 40px; left: 20px; z-index: 10; 
+            background: rgba(13, 17, 23, 0.6); backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; width: 320px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .neon-text { color: #fff; text-shadow: 0 0 10px rgba(88, 166, 255, 0.8); margin: 0 0 15px 0; font-size: 20px; font-weight: bold; letter-spacing: 1px; }
+        
+        /* 表单样式 */
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 12px; color: #8b9bb4; margin-bottom: 5px; }
+        .input-group input { 
+            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid #30363d; 
+            color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 14px; box-sizing: border-box;
+            outline: none; transition: border 0.3s;
+        }
+        .input-group input:focus { border-color: #58a6ff; }
+        
+        button {
+            width: 100%; background: linear-gradient(90deg, #1f6feb, #3fb950); 
+            border: none; color: white; padding: 10px; border-radius: 6px; 
+            font-weight: bold; cursor: pointer; transition: opacity 0.3s;
+        }
+        button:hover { opacity: 0.8; }
+
+        /* 数据展示区 */
+        #stats-panel { margin-top: 15px; font-family: monospace; font-size: 12px; display: none; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .color-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 </head>
 <body>
 
     <div id="ui-layer">
-        <h1 class="neon-text">先天五行能量场</h1>
-        <p class="sub-text" id="status-text"><span class="status-dot">●</span> GLSL 底层着色器已接管 | 无限解析度</p>
-        <div id="error-log"></div>
+        <h1 class="neon-text">Alpha-Omega 命局推演</h1>
+        
+        <div class="input-group">
+            <label>出生年 (例如: 1998)</label>
+            <input type="number" id="year" value="1998" />
+        </div>
+        <div class="input-group">
+            <label>出生月 (1-12)</label>
+            <input type="number" id="month" value="5" min="1" max="12" />
+        </div>
+        <div class="input-group">
+            <label>出生日 (1-31)</label>
+            <input type="number" id="day" value="15" min="1" max="31" />
+        </div>
+        <div class="input-group">
+            <label>出生时 (0-23)</label>
+            <input type="number" id="hour" value="14" min="0" max="23" />
+        </div>
+        
+        <button onclick="runCalculation()">注入命局能量</button>
+
+        <div id="stats-panel">
+            <div style="color:#8b9bb4; margin-bottom: 8px;">五行能量配比重组完毕：</div>
+            <div class="stat-row"><span style="color:#ff2200;"><span class="color-dot" style="background:#ff2200;"></span>火 (Fire)</span> <span id="stat-fire">0%</span></div>
+            <div class="stat-row"><span style="color:#00ccff;"><span class="color-dot" style="background:#00ccff;"></span>水 (Water)</span> <span id="stat-water">0%</span></div>
+            <div class="stat-row"><span style="color:#00ff44;"><span class="color-dot" style="background:#00ff44;"></span>木 (Wood)</span> <span id="stat-wood">0%</span></div>
+            <div class="stat-row"><span style="color:#ffea00;"><span class="color-dot" style="background:#ffea00;"></span>金 (Metal)</span> <span id="stat-metal">0%</span></div>
+            <div class="stat-row"><span style="color:#b5824c;"><span class="color-dot" style="background:#b5824c;"></span>土 (Earth)</span> <span id="stat-earth">0%</span></div>
+        </div>
     </div>
 
     <div id="canvas-container"></div>
 
     <script>
-        function showError(msg) {
-            const errBox = document.getElementById('error-log');
-            errBox.style.display = 'block';
-            errBox.innerHTML += `❌ ${msg}<br>`;
-        }
+        // ==========================================
+        // 模块 1：底层算法 - 天干地支与五行映射体系
+        // ==========================================
+        
+        // 核心字典：五行对应的 Three.js 极客色彩
+        const WUXING_COLORS = {
+            '火': new THREE.Color(0xff2200),
+            '水': new THREE.Color(0x00ccff),
+            '木': new THREE.Color(0x00ff44),
+            '金': new THREE.Color(0xffea00),
+            '土': new THREE.Color(0xb5824c)
+        };
 
-        try {
-            const container = document.getElementById('canvas-container');
-            const scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x030508, 0.002);
+        // 天干五行映射
+        const STEMS_WUXING = ['水', '木', '木', '火', '火', '土', '土', '金', '金', '水']; 
+        // 地支五行映射 (简化版：子水, 丑土, 寅木, 卯木, 辰土, 巳火, 午火, 未土, 申金, 酉金, 戌土, 亥水)
+        const BRANCHES_WUXING = ['水', '土', '木', '木', '土', '火', '火', '土', '金', '金', '土', '水'];
 
-            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-            camera.position.set(0, 150, 400);
-            camera.lookAt(0, 0, 0);
-
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        // 手搓轻量级八字五行推演算法
+        function calculateWuXingWeights(year, month, day, hour) {
+            // 1. 年柱推演 (公式: 年份减3除以10/12取余)
+            const yearStemIdx = (year - 3) % 10;
+            const yearBranchIdx = (year - 3) % 12;
             
-            // 完全拉满物理像素比
-            renderer.setPixelRatio(window.devicePixelRatio); 
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            container.appendChild(renderer.domElement);
+            // 2. 简易月、日、时推演 (在工业级SaaS中，这里会接入 lunar-javascript 天文历法库)
+            // 这里我们用一种基于日期特征的哈希算法，生成稳定且符合逻辑的五行分布
+            const monthIdx = (month + 1) % 12; // 寅月为正月起始
+            const dayIdx = (year + month + day) % 10; 
+            const hourIdx = Math.floor((hour + 1) / 2) % 12; // 子时跨天处理
 
-            const particleCount = 4000; // 在 shader 优化下，数量可以适当回调
-            const geometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(particleCount * 3);
-            const colors = new Float32Array(particleCount * 3);
-            const initialY = new Float32Array(particleCount);
-
-            const wuXingColors = [
-                new THREE.Color(0xff2200), // 火 - 极致红
-                new THREE.Color(0x00ccff), // 水 - 极致蓝
-                new THREE.Color(0x00ff44), // 木 - 极致绿
-                new THREE.Color(0xffea00), // 金 - 极致金
-                new THREE.Color(0xb5824c)  // 土 - 极致琥珀
+            // 3. 收集八个字的五行属性
+            const elements = [
+                STEMS_WUXING[yearStemIdx], BRANCHES_WUXING[yearBranchIdx],     // 年
+                STEMS_WUXING[(yearStemIdx + month) % 10], BRANCHES_WUXING[monthIdx], // 月 (伪)
+                STEMS_WUXING[dayIdx], BRANCHES_WUXING[(dayIdx + month) % 12],      // 日 (伪)
+                STEMS_WUXING[(dayIdx + hourIdx) % 10], BRANCHES_WUXING[hourIdx]    // 时 (伪)
             ];
 
+            // 4. 统计权重配比
+            let counts = { '火': 0, '水': 0, '木': 0, '金': 0, '土': 0 };
+            elements.forEach(el => counts[el]++);
+            
+            // 转换成百分比
+            let weights = {};
+            for (let key in counts) {
+                weights[key] = counts[key] / 8; // 总共8个字
+            }
+            return weights;
+        }
+
+        // ==========================================
+        // 模块 2：3D 视觉引擎 (接管渲染权)
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x030508, 0.002);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.position.set(0, 150, 400);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(window.devicePixelRatio); 
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        container.appendChild(renderer.domElement);
+
+        const particleCount = 4000; 
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+        const initialY = new Float32Array(particleCount);
+
+        // 初始生成默认星空
+        for (let i = 0; i < particleCount; i++) {
+            const i3 = i * 3;
+            const radius = Math.random() * 250;
+            const spinAngle = radius * 0.02; 
+            const branchAngle = (Math.floor(Math.random() * 5) / 5) * Math.PI * 2; 
+            
+            const randomX = Math.pow(Math.random() - 0.5, 3) * 100;
+            const randomY = Math.pow(Math.random() - 0.5, 3) * 80;
+            const randomZ = Math.pow(Math.random() - 0.5, 3) * 100;
+
+            positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
+            positions[i3 + 1] = randomY; 
+            positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
+            initialY[i] = positions[i3 + 1];
+
+            // 初始颜色赋予一点暗淡的幽蓝色
+            colors[i3] = 0.1; colors[i3 + 1] = 0.3; colors[i3 + 2] = 0.5;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        const shaderMaterial = new THREE.ShaderMaterial({
+            vertexShader: `
+                attribute vec3 color;
+                varying vec3 vColor;
+                void main() {
+                    vColor = color;
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    gl_PointSize = 1000.0 / -mvPosition.z * ${window.devicePixelRatio.toFixed(1)};
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                varying vec3 vColor;
+                void main() {
+                    vec2 pt = gl_PointCoord - vec2(0.5);
+                    float dist = length(pt) * 2.0; 
+                    if (dist > 1.0) discard; 
+                    float core = smoothstep(0.15, 0.0, dist);
+                    float glow = pow(1.0 - dist, 1.5);
+                    vec3 finalColor = vColor * glow * 1.5 + vec3(1.0) * core * 1.2;
+                    gl_FragColor = vec4(finalColor, 1.0);
+                }
+            `,
+            transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+        });
+
+        const particleSystem = new THREE.Points(geometry, shaderMaterial);
+        scene.add(particleSystem);
+
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+            particleSystem.rotation.y = elapsedTime * 0.05;
+            
+            const positionsAttribute = geometry.attributes.position;
+            const posArray = positionsAttribute.array;
             for (let i = 0; i < particleCount; i++) {
                 const i3 = i * 3;
-                const radius = Math.random() * 250;
-                const spinAngle = radius * 0.02; 
-                const branchAngle = (Math.floor(Math.random() * 5) / 5) * Math.PI * 2; 
-                
-                const randomX = Math.pow(Math.random() - 0.5, 3) * 100;
-                const randomY = Math.pow(Math.random() - 0.5, 3) * 80;
-                const randomZ = Math.pow(Math.random() - 0.5, 3) * 100;
-
-                positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
-                positions[i3 + 1] = randomY; 
-                positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
-                
-                initialY[i] = positions[i3 + 1];
-
-                const colorIndex = Math.floor((branchAngle / (Math.PI * 2)) * 5) % 5;
-                const color = wuXingColors[colorIndex];
-                
-                if(Math.random() > 0.85) {
-                    const randomColor = wuXingColors[Math.floor(Math.random() * 5)];
-                    colors[i3] = randomColor.r; colors[i3 + 1] = randomColor.g; colors[i3 + 2] = randomColor.b;
-                } else {
-                    colors[i3] = color.r; colors[i3 + 1] = color.g; colors[i3 + 2] = color.b;
-                }
+                posArray[i3 + 1] = initialY[i] + Math.sin(elapsedTime * 2 + posArray[i3]*0.05) * 5;
             }
-
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-            // ==========================================
-            // 【终极武器】纯数学 Shader 材质
-            // ==========================================
-            const shaderMaterial = new THREE.ShaderMaterial({
-                vertexShader: `
-                    attribute vec3 color;
-                    varying vec3 vColor;
-                    void main() {
-                        vColor = color;
-                        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                        // 粒子大小根据深度缩放，并适配设备的真实像素密度
-                        gl_PointSize = 1000.0 / -mvPosition.z * ${window.devicePixelRatio.toFixed(1)};
-                        gl_Position = projectionMatrix * mvPosition;
-                    }
-                `,
-                fragmentShader: `
-                    varying vec3 vColor;
-                    void main() {
-                        // 计算片元到中心的距离，范围 0.0 -> 0.5
-                        vec2 pt = gl_PointCoord - vec2(0.5);
-                        float dist = length(pt) * 2.0; // 归一化到 0.0 -> 1.0
-                        
-                        // 直接用数学刀切出完美的正圆形
-                        if (dist > 1.0) discard; 
-                        
-                        // 构造纯白的针尖级内核
-                        float core = smoothstep(0.15, 0.0, dist);
-                        
-                        // 构造指数衰减的光晕，让五行颜色从内核溢出
-                        float glow = pow(1.0 - dist, 1.5);
-                        
-                        // 核心白 + 外围色彩混合
-                        vec3 finalColor = vColor * glow * 1.5 + vec3(1.0) * core * 1.2;
-                        
-                        gl_FragColor = vec4(finalColor, 1.0);
-                    }
-                `,
-                transparent: true,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false
-            });
-
-            const particleSystem = new THREE.Points(geometry, shaderMaterial);
-            scene.add(particleSystem);
-
-            const clock = new THREE.Clock();
-            function animate() {
-                requestAnimationFrame(animate);
-                const elapsedTime = clock.getElapsedTime();
-
-                particleSystem.rotation.y = elapsedTime * 0.05;
-                const positionsAttribute = geometry.attributes.position;
-                const posArray = positionsAttribute.array;
-                
-                for (let i = 0; i < particleCount; i++) {
-                    const i3 = i * 3;
-                    posArray[i3 + 1] = initialY[i] + Math.sin(elapsedTime * 2 + posArray[i3]*0.05) * 5;
-                }
-                positionsAttribute.needsUpdate = true;
-                renderer.render(scene, camera);
-            }
-
-            animate();
-
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-
-        } catch (error) {
-            showError(error.message);
+            positionsAttribute.needsUpdate = true;
+            renderer.render(scene, camera);
         }
+        animate();
+
+        // ==========================================
+        // 模块 3：UI 与底层数据的热插拔联动
+        // ==========================================
+        function runCalculation() {
+            const y = parseInt(document.getElementById('year').value);
+            const m = parseInt(document.getElementById('month').value);
+            const d = parseInt(document.getElementById('day').value);
+            const h = parseInt(document.getElementById('hour').value);
+
+            // 1. 调用算法，获取五行比例
+            const weights = calculateWuXingWeights(y, m, d, h);
+
+            // 2. 更新面板数据
+            document.getElementById('stats-panel').style.display = 'block';
+            document.getElementById('stat-fire').innerText = (weights['火'] * 100).toFixed(1) + '%';
+            document.getElementById('stat-water').innerText = (weights['水'] * 100).toFixed(1) + '%';
+            document.getElementById('stat-wood').innerText = (weights['木'] * 100).toFixed(1) + '%';
+            document.getElementById('stat-metal').innerText = (weights['金'] * 100).toFixed(1) + '%';
+            document.getElementById('stat-earth').innerText = (weights['土'] * 100).toFixed(1) + '%';
+
+            // 3. 核心：重组显卡显存中的粒子色彩
+            const colorsAttribute = geometry.attributes.color;
+            const colArray = colorsAttribute.array;
+            
+            // 生成一个根据权重分配颜色的数组池
+            let colorPool = [];
+            for (let key in weights) {
+                const count = Math.floor(weights[key] * particleCount);
+                for(let k=0; k<count; k++) colorPool.push(WUXING_COLORS[key]);
+            }
+            // 补齐缺失的粒子（防舍入误差）
+            while(colorPool.length < particleCount) colorPool.push(WUXING_COLORS['土']);
+            
+            // 打乱数组，让各五行粒子均匀分布在星系中
+            colorPool.sort(() => Math.random() - 0.5);
+
+            // 注入显存
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                colArray[i3] = colorPool[i].r;
+                colArray[i3 + 1] = colorPool[i].g;
+                colArray[i3 + 2] = colorPool[i].b;
+            }
+            
+            // ⚡ 触发热更新命令，告知 GPU 数据已变更
+            colorsAttribute.needsUpdate = true;
+            
+            // 每次点击让整个星系产生一次轻微的震荡特效
+            particleSystem.rotation.y -= 0.5;
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
