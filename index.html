@@ -3,40 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alpha-Omega 五行剑意引擎</title>
+    <title>Alpha-Omega V11 镇局剑阵版</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #010204; font-family: -apple-system, sans-serif; color: #fff; }
-        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
         
-        #ui-top { position: absolute; top: 20px; left: 20px; font-weight: bold; text-shadow: 0 0 10px rgba(255,255,255,0.5); letter-spacing: 1px; z-index: 10; font-size: 14px; }
-        #status { color: #00ffff; margin-top: 5px; font-size: 12px; }
-
-        /* 五行控制台 */
-        #wuxing-panel {
-            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 15px; z-index: 10;
-            background: rgba(10, 15, 20, 0.7); backdrop-filter: blur(10px);
-            padding: 15px 25px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        #ui-layer { 
+            position: absolute; top: 40px; left: 50%; transform: translateX(-50%); z-index: 10; 
+            background: rgba(10, 14, 20, 0.7); backdrop-filter: blur(15px); 
+            border: 1px solid rgba(88, 166, 255, 0.2); border-radius: 16px; padding: 20px; width: 90%; max-width: 340px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9); transition: all 0.3s ease;
+        }
+        
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .neon-text { color: #fff; text-shadow: 0 0 15px rgba(88, 166, 255, 0.9); margin: 0; font-size: 19px; font-weight: bold; }
+        .sub-text { color: #8b9bb4; font-size: 11px; margin-bottom: 15px; font-family: monospace; }
+        .status-dot { color: #00ff44; text-shadow: 0 0 8px #00ff44; animation: pulse 1.5s infinite; }
+        
+        #toggle-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 12px; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+        
+        .input-flex { display: flex; gap: 8px; margin-bottom: 12px; }
+        .input-group { flex: 1; }
+        .input-group label { display: block; font-size: 11px; color: #8b9bb4; margin-bottom: 4px; }
+        .input-group input { 
+            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #30363d; 
+            color: #fff; padding: 8px; border-radius: 6px; font-size: 13px; box-sizing: border-box; outline: none;
+        }
+        .input-group input:focus { border-color: #58a6ff; }
+        
+        button.action-btn {
+            width: 100%; background: linear-gradient(135deg, #1f6feb, #b352ff); 
+            border: none; color: white; padding: 12px; border-radius: 6px; 
+            font-weight: bold; cursor: pointer; font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 15px rgba(179, 82, 255, 0.3);
         }
 
-        .btn {
-            width: 45px; height: 45px; border-radius: 50%; border: 2px solid transparent;
-            font-weight: bold; font-size: 16px; cursor: pointer;
-            display: flex; justify-content: center; align-items: center;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            color: #000; text-shadow: 0 1px 2px rgba(255,255,255,0.5);
-        }
-
-        .btn:hover { transform: scale(1.15) translateY(-5px); }
+        #stats-panel { margin-top: 15px; font-family: monospace; font-size: 12px; display: none; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,215,0,0.2); }
+        #true-bazi { text-align: center; font-size: 18px; font-weight: bold; color: #e2e8f0; letter-spacing: 2px; }
+        #wealth-resonance { text-align: center; margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px; font-size: 13px; border-left: 2px solid #58a6ff; }
         
-        /* 五行专属色彩 */
-        .btn-metal { background: #ffea00; box-shadow: 0 0 15px #ffea00; border-color: #fff; }
-        .btn-wood  { background: #00ff44; box-shadow: 0 0 15px #00ff44; border-color: #fff; }
-        .btn-water { background: #00ccff; box-shadow: 0 0 15px #00ccff; border-color: #fff; }
-        .btn-fire  { background: #ff2200; box-shadow: 0 0 15px #ff2200; border-color: #fff; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.8);}
-        .btn-earth { background: #d28f41; box-shadow: 0 0 15px #d28f41; border-color: #fff; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.8);}
+        #wake-btn { position: absolute; top: 20px; right: 20px; z-index: 20; display: none; background: rgba(13, 17, 23, 0.8); border: 1px solid #b352ff; color: #fff; padding: 8px 15px; border-radius: 20px; font-weight: bold; backdrop-filter: blur(5px); cursor: pointer; }
 
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
@@ -45,40 +53,66 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.12/lunar.min.js"></script>
 </head>
 <body>
 
-    <div id="ui-top">
-        <div>Alpha-Omega 剑阵终端</div>
-        <div id="status">▶ 当前剑意：太阴真水 (Water)</div>
-    </div>
+    <button id="wake-btn" onclick="toggleUI(true)">👁️ 展开阵列终端</button>
 
-    <div id="wuxing-panel">
-        <div class="btn btn-metal" onclick="switchElement('金')">金</div>
-        <div class="btn btn-wood" onclick="switchElement('木')">木</div>
-        <div class="btn btn-water" onclick="switchElement('水')">水</div>
-        <div class="btn btn-fire" onclick="switchElement('火')">火</div>
-        <div class="btn btn-earth" onclick="switchElement('土')">土</div>
+    <div id="ui-layer">
+        <div class="header-flex">
+            <h1 class="neon-text">Alpha-Omega 剑阵</h1>
+            <button id="toggle-btn" onclick="toggleUI(false)">👁️ 隐藏</button>
+        </div>
+        <p class="sub-text"><span class="status-dot">●</span> 泛光剑体与星盘缝合完毕</p>
+        
+        <div id="form-content">
+            <div class="input-flex">
+                <div class="input-group" style="flex: 1.5;"><label>年</label><input type="number" id="year" value="1998" /></div>
+                <div class="input-group"><label>月</label><input type="number" id="month" value="5" /></div>
+                <div class="input-group"><label>日</label><input type="number" id="day" value="15" /></div>
+                <div class="input-group"><label>时</label><input type="number" id="hour" value="14" /></div>
+            </div>
+            
+            <button class="action-btn" onclick="runCoreEngine()">祭出本命镇局法器</button>
+
+            <div id="stats-panel">
+                <div id="true-bazi">-- -- -- --</div>
+                <div id="wealth-resonance">阵眼剑意已锁定: <span id="sword-intent" style="color:#ffd700; font-weight:bold;">--</span></div>
+            </div>
+        </div>
     </div>
 
     <div id="canvas-container"></div>
 
     <script>
-        // 五行色彩字典 (RGB归一化值，供 Shader 使用)
-        const WUXING_DATA = {
-            '金': { hex: 0xffea00, vec: new THREE.Vector3(1.0, 0.9, 0.0), name: '庚金剑意' },
-            '木': { hex: 0x00ff44, vec: new THREE.Vector3(0.0, 1.0, 0.2), name: '乙木剑意' },
-            '水': { hex: 0x00ccff, vec: new THREE.Vector3(0.0, 0.8, 1.0), name: '太阴真水' },
-            '火': { hex: 0xff2200, vec: new THREE.Vector3(1.0, 0.1, 0.0), name: '离火剑意' },
-            '土': { hex: 0xd28f41, vec: new THREE.Vector3(0.8, 0.5, 0.2), name: '戊土剑意' }
-        };
+        function toggleUI(show) {
+            document.getElementById('ui-layer').style.display = show ? 'block' : 'none';
+            document.getElementById('wake-btn').style.display = show ? 'none' : 'block';
+        }
 
+        // 五行字典
+        const WUXING_DATA = {
+            '金': { hex: 0xffea00, vec: new THREE.Vector3(1.0, 0.9, 0.0), name: '庚金财剑' },
+            '木': { hex: 0x00ff44, vec: new THREE.Vector3(0.0, 1.0, 0.2), name: '乙木财剑' },
+            '水': { hex: 0x00ccff, vec: new THREE.Vector3(0.0, 0.8, 1.0), name: '真水财剑' },
+            '火': { hex: 0xff2200, vec: new THREE.Vector3(1.0, 0.1, 0.0), name: '离火财剑' },
+            '土': { hex: 0xd28f41, vec: new THREE.Vector3(0.8, 0.5, 0.2), name: '戊土财剑' }
+        };
+        const CHAR_TO_WUXING = { '甲':'木', '乙':'木', '丙':'火', '丁':'火', '戊':'土', '己':'土', '庚':'金', '辛':'金', '壬':'水', '癸':'水', '子':'水', '丑':'土', '寅':'木', '卯':'木', '辰':'土', '巳':'火', '午':'火', '未':'土', '申':'金', '酉':'金', '戌':'土', '亥':'水' };
+        const WEALTH_RULES = { '木':'土', '火':'金', '土':'水', '金':'木', '水':'火' };
+
+        let currentCosmicColors = []; 
+
+        // ==========================================
+        // 1. 初始化场景与 HDR 泛光
+        // ==========================================
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x010204, 0.003);
+        scene.fog = new THREE.FogExp2(0x010204, 0.0015);
 
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 5, 35);
+        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.position.set(0, 150, 450);
         camera.lookAt(0, 0, 0);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
@@ -87,158 +121,229 @@
         renderer.toneMapping = THREE.ReinhardToneMapping;
         container.appendChild(renderer.domElement);
 
-        // HDR 泛光
         const renderScene = new THREE.RenderPass(scene, camera);
-        const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2.5, 0.8, 0.1);
+        const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2.2, 0.6, 0.1);
         const composer = new THREE.EffectComposer(renderer);
         composer.addPass(renderScene);
         composer.addPass(bloomPass);
 
         // ==========================================
-        // 核心：支持五行动态注入的 Shader
+        // 2. 构建星盘粒子场
         // ==========================================
-        const swordVertexShader = `
-            varying vec2 vUv;
-            varying vec3 vPosition;
-            void main() {
-                vUv = uv;
-                vPosition = position;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        const particleCount = 4500;
+        const geoParticles = new THREE.BufferGeometry();
+        const posParticles = new Float32Array(particleCount * 3);
+        const colParticles = new Float32Array(particleCount * 3);
+        const radii = new Float32Array(particleCount);
+        const angles = new Float32Array(particleCount);
+
+        for (let i = 0; i < particleCount; i++) {
+            const i3 = i * 3;
+            radii[i] = Math.random() * 280 + 30; // 留出中心阵眼给光剑
+            angles[i] = Math.random() * Math.PI * 2;
+
+            if (i < 3500) { // 本命
+                const spin = radii[i] * 0.02;
+                posParticles[i3] = Math.cos(angles[i] + spin) * radii[i];
+                posParticles[i3 + 1] = Math.pow(Math.random() - 0.5, 3) * 60;
+                posParticles[i3 + 2] = Math.sin(angles[i] + spin) * radii[i];
+                colParticles[i3] = 0.05; colParticles[i3+1] = 0.1; colParticles[i3+2] = 0.2;
+            } else { // 流时
+                posParticles[i3] = (Math.random() - 0.5) * 2000;
+                posParticles[i3 + 1] = 400 + Math.random() * 300;
+                posParticles[i3 + 2] = (Math.random() - 0.5) * 2000;
+                colParticles[i3] = 0; colParticles[i3+1] = 0; colParticles[i3+2] = 0;
             }
-        `;
+        }
+        geoParticles.setAttribute('position', new THREE.BufferAttribute(posParticles, 3));
+        geoParticles.setAttribute('color', new THREE.BufferAttribute(colParticles, 3));
 
-        const swordFragmentShader = `
-            uniform float uTime;
-            uniform vec3 uColor; // 接收前端传来的五行颜色
-            
-            varying vec2 vUv;
-            varying vec3 vPosition;
+        const matParticles = new THREE.ShaderMaterial({
+            uniforms: { uTime: { value: 0.0 }, uShockwave: { value: 0.0 } },
+            vertexShader: `
+                uniform float uTime; uniform float uShockwave;
+                attribute vec3 color; varying vec3 vColor;
+                void main() {
+                    vColor = color;
+                    vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+                    float breathe = sin(uTime * 2.0 + position.x * 0.05) * 0.3 + 0.8;
+                    gl_PointSize = (800.0 * breathe * (1.0 + uShockwave)) / -mvPos.z * ${window.devicePixelRatio.toFixed(1)};
+                    gl_Position = projectionMatrix * mvPos;
+                }
+            `,
+            fragmentShader: `
+                uniform float uShockwave; varying vec3 vColor;
+                void main() {
+                    vec2 pt = gl_PointCoord - vec2(0.5);
+                    float dist = length(pt) * 2.0; if (dist > 1.0) discard;
+                    float core = smoothstep(0.15, 0.0, dist);
+                    float glow = pow(1.0 - dist, 1.8);
+                    float intensity = 1.2 + uShockwave * 2.5;
+                    gl_FragColor = vec4(vColor * glow * intensity + vec3(1.0) * core * (1.0 + uShockwave), 1.0);
+                }
+            `,
+            transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+        });
+        const particles = new THREE.Points(geoParticles, matParticles);
+        scene.add(particles);
 
-            float random(vec2 st) { return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123); }
-            
-            void main() {
-                vec3 coreWhite = vec3(1.0, 1.0, 1.0);
-                
-                // Y轴流动感
-                float flow = sin(vUv.y * 20.0 - uTime * 15.0) * 0.5 + 0.5;
-                
-                // 中心锐利内核
-                float centerDist = abs(vUv.x - 0.5);
-                float core = smoothstep(0.12, 0.0, centerDist);
-                
-                // 边缘噪声扰动撕裂
-                float noise = random(vUv * 10.0 + uTime * 1.5) * 0.25;
-                float edgeAlpha = smoothstep(0.4, 0.08, centerDist + noise);
-                
-                // 将传入的五行颜色与白色内核混合
-                vec3 finalColor = mix(uColor * (flow + 0.6), coreWhite, core * 1.8);
-                
-                // 两端渐隐
-                float tipFade = smoothstep(1.0, 0.6, vUv.y);
-                float hiltFade = smoothstep(0.0, 0.1, vUv.y);
-                
-                gl_FragColor = vec4(finalColor, edgeAlpha * tipFade * hiltFade);
-            }
-        `;
-
+        // ==========================================
+        // 3. 构建阵眼法器：五行光剑
+        // ==========================================
         const swordGroup = new THREE.Group();
-        const bladeGeo = new THREE.PlaneGeometry(3.5, 25, 32, 64);
-        
-        // 材质初始化 (默认：水)
-        const bladeMat = new THREE.ShaderMaterial({
-            uniforms: { 
-                uTime: { value: 0.0 },
-                uColor: { value: WUXING_DATA['水'].vec } // 注入初始五行色
-            },
-            vertexShader: swordVertexShader,
-            fragmentShader: swordFragmentShader,
+        const swordMat = new THREE.ShaderMaterial({
+            uniforms: { uTime: { value: 0.0 }, uColor: { value: new THREE.Vector3(0.0, 0.8, 1.0) } },
+            vertexShader: ` varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); } `,
+            fragmentShader: `
+                uniform float uTime; uniform vec3 uColor; varying vec2 vUv;
+                float random(vec2 st) { return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123); }
+                void main() {
+                    float flow = sin(vUv.y * 25.0 - uTime * 20.0) * 0.5 + 0.5;
+                    float center = abs(vUv.x - 0.5);
+                    float core = smoothstep(0.1, 0.0, center);
+                    float noise = random(vUv * 15.0 + uTime * 2.0) * 0.3;
+                    float edge = smoothstep(0.4, 0.05, center + noise);
+                    vec3 finalCol = mix(uColor * (flow + 0.8), vec3(1.0), core * 2.0);
+                    gl_FragColor = vec4(finalCol, edge * smoothstep(1.0, 0.6, vUv.y) * smoothstep(0.0, 0.1, vUv.y));
+                }
+            `,
             transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
         });
-
-        const blade = new THREE.Mesh(bladeGeo, bladeMat);
-        blade.rotation.z = Math.PI / 4;
-        blade.rotation.x = Math.PI / 6;
-        swordGroup.add(blade);
+        // 放大剑体以适应大星盘
+        const swordMesh = new THREE.Mesh(new THREE.PlaneGeometry(20, 150, 32, 64), swordMat);
+        swordMesh.rotation.z = Math.PI / 6;
+        swordMesh.rotation.x = Math.PI / 4;
+        swordGroup.add(swordMesh);
+        
+        // 剑气火花
+        const geoSparks = new THREE.BufferGeometry();
+        const posSparks = new Float32Array(300 * 3);
+        const velSparks = [];
+        for(let i=0; i<300; i++) {
+            posSparks[i*3] = (Math.random()-0.5)*20; posSparks[i*3+1] = (Math.random()-0.5)*80; posSparks[i*3+2] = (Math.random()-0.5)*10;
+            velSparks.push({ x: (Math.random()-0.5)*0.2, y: Math.random()*0.5+0.2, z: (Math.random()-0.5)*0.2 });
+        }
+        geoSparks.setAttribute('position', new THREE.BufferAttribute(posSparks, 3));
+        const matSparks = new THREE.PointsMaterial({ color: 0x00ccff, size: 1.5, transparent: true, blending: THREE.AdditiveBlending });
+        const sparks = new THREE.Points(geoSparks, matSparks);
+        swordGroup.add(sparks);
+        
         scene.add(swordGroup);
 
         // ==========================================
-        // 五行灵气火花拖尾
+        // 4. 物理引擎循环
         // ==========================================
-        const sparkCount = 400;
-        const sparkGeo = new THREE.BufferGeometry();
-        const sparkPos = new Float32Array(sparkCount * 3);
-        const sparkVel = [];
-
-        for(let i=0; i<sparkCount; i++) {
-            sparkPos[i*3] = (Math.random() - 0.5) * 5;
-            sparkPos[i*3+1] = (Math.random() - 0.5) * 20;
-            sparkPos[i*3+2] = (Math.random() - 0.5) * 2;
-            
-            sparkVel.push({
-                x: (Math.random() - 0.5) * 0.06,
-                y: Math.random() * 0.15 + 0.05,
-                z: (Math.random() - 0.5) * 0.06
-            });
-        }
-        sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
-
-        const sparkMat = new THREE.PointsMaterial({
-            color: WUXING_DATA['水'].hex, // 初始火花颜色
-            size: 0.25, transparent: true, blending: THREE.AdditiveBlending, opacity: 0.8
-        });
-        const sparks = new THREE.Points(sparkGeo, sparkMat);
-        swordGroup.add(sparks);
-
-        // ==========================================
-        // 核心交互：动态切换五行
-        // ==========================================
-        function switchElement(elementName) {
-            const data = WUXING_DATA[elementName];
-            
-            // 1. 瞬间重写 GPU Shader 颜色向量
-            bladeMat.uniforms.uColor.value = data.vec;
-            // 2. 瞬间重写火花粒子材质
-            sparkMat.color.setHex(data.hex);
-            
-            // 3. 更新 UI
-            const statusEl = document.getElementById('status');
-            statusEl.innerText = `▶ 当前剑意：${data.name} (${elementName})`;
-            statusEl.style.color = '#' + data.hex.toString(16).padStart(6, '0');
-            statusEl.style.textShadow = `0 0 10px #${data.hex.toString(16).padStart(6, '0')}`;
-            
-            // 切换时的震荡特效
-            swordGroup.position.y -= 1.5;
-        }
-
-        // 渲染循环
         const clock = new THREE.Clock();
+        let shockwave = 0.0;
+        
         function animate() {
             requestAnimationFrame(animate);
             const time = clock.getElapsedTime();
-
-            bladeMat.uniforms.uTime.value = time;
             
-            // 弹性恢复震荡
-            swordGroup.position.y += (Math.sin(time * 2) * 0.5 - swordGroup.position.y) * 0.1;
+            // 星盘自转
+            particles.rotation.y = time * 0.03;
+            // 剑意呼吸浮动
+            swordGroup.position.y = Math.sin(time * 2) * 8;
+            
+            matParticles.uniforms.uTime.value = time;
+            matParticles.uniforms.uShockwave.value = shockwave;
+            swordMat.uniforms.uTime.value = time;
+            shockwave *= 0.9; // 爆闪衰减
 
-            const positions = sparkGeo.attributes.position.array;
-            for(let i=0; i<sparkCount; i++) {
-                positions[i*3] += sparkVel[i].x;
-                positions[i*3+1] += sparkVel[i].y;
-                positions[i*3+2] += sparkVel[i].z;
-
-                if(positions[i*3+1] > 14) {
-                    positions[i*3] = (Math.random() - 0.5) * 3;
-                    positions[i*3+1] = -12 + Math.random() * 2;
-                    positions[i*3+2] = (Math.random() - 0.5) * 2;
+            // 火花运动
+            const sPos = geoSparks.attributes.position.array;
+            for(let i=0; i<300; i++) {
+                sPos[i*3] += velSparks[i].x; sPos[i*3+1] += velSparks[i].y; sPos[i*3+2] += velSparks[i].z;
+                if(sPos[i*3+1] > 60) {
+                    sPos[i*3] = (Math.random()-0.5)*15; sPos[i*3+1] = -50 + Math.random()*10; sPos[i*3+2] = (Math.random()-0.5)*10;
                 }
             }
-            sparkGeo.attributes.position.needsUpdate = true;
+            geoSparks.attributes.position.needsUpdate = true;
 
-            composer.render();
+            // 流星砸击星盘中心阵眼
+            if (currentCosmicColors.length > 0) {
+                const pPos = geoParticles.attributes.position.array;
+                const pCol = geoParticles.attributes.color.array;
+                for (let i = 3500; i < 4500; i++) {
+                    const i3 = i * 3;
+                    pPos[i3] *= 0.94; pPos[i3 + 1] *= 0.94; pPos[i3 + 2] *= 0.94; // 塌缩加速
+                    
+                    const dist = Math.sqrt(pPos[i3]*pPos[i3] + pPos[i3+1]*pPos[i3+1] + pPos[i3+2]*pPos[i3+2]);
+                    if (dist < 25) { // 砸中中心剑阵！
+                        shockwave = Math.min(1.0, shockwave + 0.1); // 触发全局爆闪
+                        
+                        const r = 800 + Math.random()*400; const theta = Math.random()*Math.PI*2; const phi = Math.acos((Math.random()*2)-1);
+                        pPos[i3] = r*Math.sin(phi)*Math.cos(theta); pPos[i3+1] = r*Math.sin(phi)*Math.sin(theta); pPos[i3+2] = r*Math.cos(phi);
+                        
+                        const c = currentCosmicColors[i % currentCosmicColors.length];
+                        pCol[i3] = c.r; pCol[i3+1] = c.g; pCol[i3+2] = c.b;
+                    }
+                }
+                geoParticles.attributes.position.needsUpdate = true;
+                geoParticles.attributes.color.needsUpdate = true;
+            }
+
+            composer.render(); // 使用后处理渲染
+        }
+        animate();
+
+        // ==========================================
+        // 5. 历法计算与剑阵自动注魂
+        // ==========================================
+        function runCoreEngine() {
+            const y = parseInt(document.getElementById('year').value);
+            const m = parseInt(document.getElementById('month').value);
+            const d = parseInt(document.getElementById('day').value);
+            const h = parseInt(document.getElementById('hour').value);
+
+            const bazi = Solar.fromYmdHms(y, m, d, h, 0, 0).getLunar().getEightChar();
+            const dayStem = bazi.getDay().charAt(0);
+            
+            const dayMasterWx = CHAR_TO_WUXING[dayStem];
+            const wealthWx = WEALTH_RULES[dayMasterWx]; // 你的财星
+            const swordData = WUXING_DATA[wealthWx];
+
+            document.getElementById('stats-panel').style.display = 'block';
+            document.getElementById('true-bazi').innerText = `${bazi.getYear()} ${bazi.getMonth()} ${bazi.getDay()} ${bazi.getTime()}`;
+            
+            const swordEl = document.getElementById('sword-intent');
+            swordEl.innerText = swordData.name;
+            swordEl.style.color = '#' + swordData.hex.toString(16).padStart(6, '0');
+
+            // 染原本命星盘
+            const baziStr = bazi.getYear() + bazi.getMonth() + bazi.getDay() + bazi.getTime();
+            let natalCols = [];
+            for(let i=0; i<baziStr.length; i++) if(CHAR_TO_WUXING[baziStr[i]]) natalCols.push(new THREE.Color(WUXING_DATA[CHAR_TO_WUXING[baziStr[i]]].hex));
+            
+            const pCol = geoParticles.attributes.color.array;
+            for(let i=0; i<3500; i++) {
+                const c = natalCols[i % natalCols.length];
+                pCol[i*3] = c.r; pCol[i*3+1] = c.g; pCol[i*3+2] = c.b;
+            }
+            geoParticles.attributes.color.needsUpdate = true;
+
+            // 自动重铸光剑属性为你的“财星”
+            swordMat.uniforms.uColor.value = swordData.vec;
+            matSparks.color.setHex(swordData.hex);
+            
+            trackCosmicFlow(); // 启动流年代替
         }
 
-        animate();
+        let tracker;
+        function trackCosmicFlow() {
+            if(tracker) clearInterval(tracker);
+            const check = () => {
+                const now = new Date();
+                const cosmicStr = Solar.fromYmdHms(now.getFullYear(), now.getMonth()+1, now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds()).getLunar().getEightChar().toString();
+                
+                currentCosmicColors = []; 
+                for(let i=0; i<cosmicStr.length; i++) {
+                    const wx = CHAR_TO_WUXING[cosmicStr[i]];
+                    if(wx) currentCosmicColors.push(new THREE.Color(WUXING_DATA[wx].hex));
+                }
+            };
+            check(); tracker = setInterval(check, 3000);
+        }
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
