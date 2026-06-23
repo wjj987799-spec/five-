@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>五行命局能量场 V4 (HD版)</title>
+    <title>五行命局能量场 V5 (显卡直驱版)</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #030508; font-family: -apple-system, sans-serif; }
         #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
@@ -20,7 +20,7 @@
 
     <div id="ui-layer">
         <h1 class="neon-text">先天五行能量场</h1>
-        <p class="sub-text" id="status-text"><span class="status-dot">●</span> 视网膜级超清渲染已开启</p>
+        <p class="sub-text" id="status-text"><span class="status-dot">●</span> GLSL 底层着色器已接管 | 无限解析度</p>
         <div id="error-log"></div>
     </div>
 
@@ -44,43 +44,23 @@
 
             const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             
-            // 【画质升级 1】彻底解除像素封印，调用手机原生最高清分辨率
+            // 完全拉满物理像素比
             renderer.setPixelRatio(window.devicePixelRatio); 
             renderer.setSize(window.innerWidth, window.innerHeight);
             container.appendChild(renderer.domElement);
 
-            // 【画质升级 2】手搓 4 倍超清贴图，打造锐利内核
-            function createHDTexture() {
-                const canvas = document.createElement('canvas');
-                canvas.width = 256; // 从 64 提升到 256
-                canvas.height = 256;
-                const context = canvas.getContext('2d');
-                const gradient = context.createRadialGradient(128, 128, 0, 128, 128, 128);
-                
-                // 重新调配光晕比例：中心 5% 是绝对纯白的实体，边缘才是发光层
-                gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-                gradient.addColorStop(0.05, 'rgba(255, 255, 255, 1)'); // 恒星锐利内核
-                gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.6)'); // 内层光晕
-                gradient.addColorStop(0.6, 'rgba(255, 255, 255, 0.1)'); // 外层散射
-                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                
-                context.fillStyle = gradient;
-                context.fillRect(0, 0, 256, 256);
-                return new THREE.CanvasTexture(canvas);
-            }
-
-            const particleCount = 3000; 
+            const particleCount = 4000; // 在 shader 优化下，数量可以适当回调
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(particleCount * 3);
             const colors = new Float32Array(particleCount * 3);
             const initialY = new Float32Array(particleCount);
 
             const wuXingColors = [
-                new THREE.Color(0xff4422), // 火
-                new THREE.Color(0x00e5ff), // 水
-                new THREE.Color(0x33ff66), // 木
-                new THREE.Color(0xfff5a0), // 金
-                new THREE.Color(0xcca373)  // 土
+                new THREE.Color(0xff2200), // 火 - 极致红
+                new THREE.Color(0x00ccff), // 水 - 极致蓝
+                new THREE.Color(0x00ff44), // 木 - 极致绿
+                new THREE.Color(0xffea00), // 金 - 极致金
+                new THREE.Color(0xb5824c)  // 土 - 极致琥珀
             ];
 
             for (let i = 0; i < particleCount; i++) {
@@ -102,7 +82,7 @@
                 const colorIndex = Math.floor((branchAngle / (Math.PI * 2)) * 5) % 5;
                 const color = wuXingColors[colorIndex];
                 
-                if(Math.random() > 0.8) {
+                if(Math.random() > 0.85) {
                     const randomColor = wuXingColors[Math.floor(Math.random() * 5)];
                     colors[i3] = randomColor.r; colors[i3 + 1] = randomColor.g; colors[i3 + 2] = randomColor.b;
                 } else {
@@ -113,17 +93,49 @@
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-            const material = new THREE.PointsMaterial({
-                size: 8, // 缩小一丢丢体积，配合高清纹理显得更精致
-                map: createHDTexture(),
-                vertexColors: true,
+            // ==========================================
+            // 【终极武器】纯数学 Shader 材质
+            // ==========================================
+            const shaderMaterial = new THREE.ShaderMaterial({
+                vertexShader: `
+                    attribute vec3 color;
+                    varying vec3 vColor;
+                    void main() {
+                        vColor = color;
+                        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                        // 粒子大小根据深度缩放，并适配设备的真实像素密度
+                        gl_PointSize = 1000.0 / -mvPosition.z * ${window.devicePixelRatio.toFixed(1)};
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vColor;
+                    void main() {
+                        // 计算片元到中心的距离，范围 0.0 -> 0.5
+                        vec2 pt = gl_PointCoord - vec2(0.5);
+                        float dist = length(pt) * 2.0; // 归一化到 0.0 -> 1.0
+                        
+                        // 直接用数学刀切出完美的正圆形
+                        if (dist > 1.0) discard; 
+                        
+                        // 构造纯白的针尖级内核
+                        float core = smoothstep(0.15, 0.0, dist);
+                        
+                        // 构造指数衰减的光晕，让五行颜色从内核溢出
+                        float glow = pow(1.0 - dist, 1.5);
+                        
+                        // 核心白 + 外围色彩混合
+                        vec3 finalColor = vColor * glow * 1.5 + vec3(1.0) * core * 1.2;
+                        
+                        gl_FragColor = vec4(finalColor, 1.0);
+                    }
+                `,
                 transparent: true,
-                opacity: 1,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false
             });
 
-            const particleSystem = new THREE.Points(geometry, material);
+            const particleSystem = new THREE.Points(geometry, shaderMaterial);
             scene.add(particleSystem);
 
             const clock = new THREE.Clock();
