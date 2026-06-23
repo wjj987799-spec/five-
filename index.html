@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>五行命局能量场 V2</title>
+    <title>五行命局能量场 V3</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #030508; font-family: -apple-system, sans-serif; }
         #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
@@ -11,79 +11,158 @@
         .neon-text { color: #fff; text-shadow: 0 0 15px rgba(255, 255, 255, 0.6); margin: 0; font-size: 24px; font-weight: bold; letter-spacing: 2px; }
         .sub-text { color: #8b9bb4; font-size: 12px; margin-top: 8px; font-family: monospace; }
         .status-dot { color: #10b981; animation: pulse 2s infinite; }
+        #error-log { color: #ef4444; font-weight: bold; margin-top: 15px; font-size: 14px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 4px; display: none; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 </head>
 <body>
 
     <div id="ui-layer">
         <h1 class="neon-text">先天五行能量场</h1>
-        <p class="sub-text"><span class="status-dot">●</span> 柔性光晕渲染就绪 | 旋涡力场生成中</p>
+        <p class="sub-text" id="status-text"><span class="status-dot">●</span> 正在初始化 3D 渲染引擎...</p>
+        <div id="error-log"></div>
     </div>
 
     <div id="canvas-container"></div>
 
     <script>
-        const container = document.getElementById('canvas-container');
-        const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x030508, 0.002);
-
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.set(0, 150, 400);
-        camera.lookAt(0, 0, 0);
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        container.appendChild(renderer.domElement);
-
-        // ==========================================
-        // 核心修复：手搓一个边缘柔和的发光圆球贴图
-        // ==========================================
-        function createGlowingTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 64;
-            canvas.height = 64;
-            const context = canvas.getContext('2d');
-            
-            // 绘制径向渐变 (中心白，边缘透明)
-            const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
-            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-            gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
-            gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
-            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
-            context.fillStyle = gradient;
-            context.fillRect(0, 0, 64, 64);
-            return new THREE.CanvasTexture(canvas);
+        function showError(msg) {
+            const errBox = document.getElementById('error-log');
+            errBox.style.display = 'block';
+            errBox.innerHTML += `❌ ${msg}<br>`;
+            document.getElementById('status-text').innerHTML = `<span style="color:#ef4444;">● 渲染引擎启动失败</span>`;
         }
 
-        // ==========================================
-        // 旋涡星系生成器 (取代之前的乱炖球体)
-        // ==========================================
-        const particleCount = 20000; // 减少数量，增加单体质量感
-        const geometry = new THREE.BufferGeometry();
-        
-        const positions = new Float32Array(particleCount * 3);
-        const colors = new Float32Array(particleCount * 3);
-        const initialY = new Float32Array(particleCount); // 记录初始高度用于上下浮动
+        try {
+            // 1. 检查 Three.js 是否被网络拦截
+            if (typeof THREE === 'undefined') {
+                throw new Error("Three.js 核心库被网络拦截，请检查是否需要开启全局代理。");
+            }
 
-        const wuXingColors = [
-            new THREE.Color(0xff4422), // 火
-            new THREE.Color(0x00e5ff), // 水
-            new THREE.Color(0x33ff66), // 木
-            new THREE.Color(0xfff5a0), // 金
-            new THREE.Color(0xcca373)  // 土
-        ];
+            const container = document.getElementById('canvas-container');
+            const scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x030508, 0.002);
 
-        for (let i = 0; i < particleCount; i++) {
-            const i3 = i * 3;
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.set(0, 150, 400);
+            camera.lookAt(0, 0, 0);
+
+            // 2. 检查手机是否支持 WebGL
+            let renderer;
+            try {
+                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            } catch (e) {
+                throw new Error("您的设备或浏览器当前不支持 WebGL 硬件加速。");
+            }
             
-            // 构造星系旋涡形状
-            const radius = Math.random() * 250;
-            const spinAngle = radius * 0.02; // 距离中心越远，扭曲程度越高
-            const branchAngle = (Math.floor(Math.random() * 5) / 5) * Math.PI * 2; // 5条主旋臂代表五行
-            
-            // 增加一些随机散布，让它更自然
-            const randomX =
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制像素比，保护手机性能
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            // 手搓发光渐变贴图
+            function createGlowingTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 64; canvas.height = 64;
+                const context = canvas.getContext('2d');
+                const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
+                gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                context.fillStyle = gradient;
+                context.fillRect(0, 0, 64, 64);
+                return new THREE.CanvasTexture(canvas);
+            }
+
+            // 【核心修复】降低粒子数量到 3000，绝对适配手机
+            const particleCount = 3000; 
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            const initialY = new Float32Array(particleCount);
+
+            const wuXingColors = [
+                new THREE.Color(0xff4422), // 火
+                new THREE.Color(0x00e5ff), // 水
+                new THREE.Color(0x33ff66), // 木
+                new THREE.Color(0xfff5a0), // 金
+                new THREE.Color(0xcca373)  // 土
+            ];
+
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                const radius = Math.random() * 250;
+                const spinAngle = radius * 0.02; 
+                const branchAngle = (Math.floor(Math.random() * 5) / 5) * Math.PI * 2; 
+                
+                const randomX = Math.pow(Math.random() - 0.5, 3) * 100;
+                const randomY = Math.pow(Math.random() - 0.5, 3) * 80;
+                const randomZ = Math.pow(Math.random() - 0.5, 3) * 100;
+
+                positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
+                positions[i3 + 1] = randomY; 
+                positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
+                
+                initialY[i] = positions[i3 + 1];
+
+                const colorIndex = Math.floor((branchAngle / (Math.PI * 2)) * 5) % 5;
+                const color = wuXingColors[colorIndex];
+                
+                if(Math.random() > 0.8) {
+                    const randomColor = wuXingColors[Math.floor(Math.random() * 5)];
+                    colors[i3] = randomColor.r; colors[i3 + 1] = randomColor.g; colors[i3 + 2] = randomColor.b;
+                } else {
+                    colors[i3] = color.r; colors[i3 + 1] = color.g; colors[i3 + 2] = color.b;
+                }
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 10, // 增大单体尺寸弥补数量减少
+                map: createGlowingTexture(),
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+
+            const particleSystem = new THREE.Points(geometry, material);
+            scene.add(particleSystem);
+
+            document.getElementById('status-text').innerHTML = `<span class="status-dot">●</span> 柔性光晕渲染就绪 | 旋涡力场生成中`;
+
+            const clock = new THREE.Clock();
+            function animate() {
+                requestAnimationFrame(animate);
+                const elapsedTime = clock.getElapsedTime();
+
+                particleSystem.rotation.y = elapsedTime * 0.05;
+                const positionsAttribute = geometry.attributes.position;
+                const posArray = positionsAttribute.array;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const i3 = i * 3;
+                    posArray[i3 + 1] = initialY[i] + Math.sin(elapsedTime * 2 + posArray[i3]*0.05) * 5;
+                }
+                positionsAttribute.needsUpdate = true;
+                renderer.render(scene, camera);
+            }
+
+            animate();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+        } catch (error) {
+            showError(error.message);
+        }
+    </script>
+</body>
+</html>
