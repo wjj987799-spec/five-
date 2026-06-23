@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alpha-Omega V11 镇局剑阵版</title>
+    <title>Alpha-Omega V12 音效共振版</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #010204; font-family: -apple-system, sans-serif; color: #fff; }
         #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
@@ -57,14 +57,14 @@
 </head>
 <body>
 
-    <button id="wake-btn" onclick="toggleUI(true)">👁️ 展开阵列终端</button>
+    <button id="wake-btn" onclick="toggleUI(true)">👁️ 展开阵列</button>
 
     <div id="ui-layer">
         <div class="header-flex">
             <h1 class="neon-text">Alpha-Omega 剑阵</h1>
             <button id="toggle-btn" onclick="toggleUI(false)">👁️ 隐藏</button>
         </div>
-        <p class="sub-text"><span class="status-dot">●</span> 泛光剑体与星盘缝合完毕</p>
+        <p class="sub-text"><span class="status-dot">●</span> Web Audio API 频段合成已挂载</p>
         
         <div id="form-content">
             <div class="input-flex">
@@ -86,6 +86,66 @@
     <div id="canvas-container"></div>
 
     <script>
+        // ==========================================
+        // 0. Web Audio API 纯代码声音合成器
+        // ==========================================
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        // 合成：刀剑出鞘声 (高频锐利滑音 + 带通滤波)
+        function playSwordDrawSound() {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+
+            osc.type = 'square'; // 创造锐利的金属感
+            // 极速拔高的频率
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(2000, audioCtx.currentTime + 0.1);
+            osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.8);
+
+            filter.type = 'bandpass';
+            filter.frequency.value = 1500;
+            filter.Q.value = 5.0; // 让声音更尖锐
+
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 0.05); // 快速爆发
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.9); // 拖尾消散
+
+            osc.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 1.0);
+        }
+
+        // 合成：星体相撞爆闪重低音 (Sub-bass 轰击)
+        function playCollisionSound() {
+            if (!audioCtx || audioCtx.state === 'suspended') return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc.type = 'sine'; // 纯正重低音
+            osc.frequency.setValueAtTime(60, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.4);
+
+            gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
         function toggleUI(show) {
             document.getElementById('ui-layer').style.display = show ? 'block' : 'none';
             document.getElementById('wake-btn').style.display = show ? 'none' : 'block';
@@ -104,9 +164,6 @@
 
         let currentCosmicColors = []; 
 
-        // ==========================================
-        // 1. 初始化场景与 HDR 泛光
-        // ==========================================
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x010204, 0.0015);
@@ -127,9 +184,6 @@
         composer.addPass(renderScene);
         composer.addPass(bloomPass);
 
-        // ==========================================
-        // 2. 构建星盘粒子场
-        // ==========================================
         const particleCount = 4500;
         const geoParticles = new THREE.BufferGeometry();
         const posParticles = new Float32Array(particleCount * 3);
@@ -139,16 +193,16 @@
 
         for (let i = 0; i < particleCount; i++) {
             const i3 = i * 3;
-            radii[i] = Math.random() * 280 + 30; // 留出中心阵眼给光剑
+            radii[i] = Math.random() * 280 + 30; 
             angles[i] = Math.random() * Math.PI * 2;
 
-            if (i < 3500) { // 本命
+            if (i < 3500) { 
                 const spin = radii[i] * 0.02;
                 posParticles[i3] = Math.cos(angles[i] + spin) * radii[i];
                 posParticles[i3 + 1] = Math.pow(Math.random() - 0.5, 3) * 60;
                 posParticles[i3 + 2] = Math.sin(angles[i] + spin) * radii[i];
                 colParticles[i3] = 0.05; colParticles[i3+1] = 0.1; colParticles[i3+2] = 0.2;
-            } else { // 流时
+            } else { 
                 posParticles[i3] = (Math.random() - 0.5) * 2000;
                 posParticles[i3 + 1] = 400 + Math.random() * 300;
                 posParticles[i3 + 2] = (Math.random() - 0.5) * 2000;
@@ -187,10 +241,9 @@
         const particles = new THREE.Points(geoParticles, matParticles);
         scene.add(particles);
 
-        // ==========================================
-        // 3. 构建阵眼法器：五行光剑
-        // ==========================================
         const swordGroup = new THREE.Group();
+        swordGroup.visible = false; // 初始隐藏光剑
+        
         const swordMat = new THREE.ShaderMaterial({
             uniforms: { uTime: { value: 0.0 }, uColor: { value: new THREE.Vector3(0.0, 0.8, 1.0) } },
             vertexShader: ` varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); } `,
@@ -209,13 +262,12 @@
             `,
             transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
         });
-        // 放大剑体以适应大星盘
+        
         const swordMesh = new THREE.Mesh(new THREE.PlaneGeometry(20, 150, 32, 64), swordMat);
         swordMesh.rotation.z = Math.PI / 6;
         swordMesh.rotation.x = Math.PI / 4;
         swordGroup.add(swordMesh);
         
-        // 剑气火花
         const geoSparks = new THREE.BufferGeometry();
         const posSparks = new Float32Array(300 * 3);
         const velSparks = [];
@@ -227,12 +279,8 @@
         const matSparks = new THREE.PointsMaterial({ color: 0x00ccff, size: 1.5, transparent: true, blending: THREE.AdditiveBlending });
         const sparks = new THREE.Points(geoSparks, matSparks);
         swordGroup.add(sparks);
-        
         scene.add(swordGroup);
 
-        // ==========================================
-        // 4. 物理引擎循环
-        // ==========================================
         const clock = new THREE.Clock();
         let shockwave = 0.0;
         
@@ -240,37 +288,36 @@
             requestAnimationFrame(animate);
             const time = clock.getElapsedTime();
             
-            // 星盘自转
             particles.rotation.y = time * 0.03;
-            // 剑意呼吸浮动
             swordGroup.position.y = Math.sin(time * 2) * 8;
             
             matParticles.uniforms.uTime.value = time;
             matParticles.uniforms.uShockwave.value = shockwave;
             swordMat.uniforms.uTime.value = time;
-            shockwave *= 0.9; // 爆闪衰减
+            shockwave *= 0.9; 
 
-            // 火花运动
-            const sPos = geoSparks.attributes.position.array;
-            for(let i=0; i<300; i++) {
-                sPos[i*3] += velSparks[i].x; sPos[i*3+1] += velSparks[i].y; sPos[i*3+2] += velSparks[i].z;
-                if(sPos[i*3+1] > 60) {
-                    sPos[i*3] = (Math.random()-0.5)*15; sPos[i*3+1] = -50 + Math.random()*10; sPos[i*3+2] = (Math.random()-0.5)*10;
+            if (swordGroup.visible) {
+                const sPos = geoSparks.attributes.position.array;
+                for(let i=0; i<300; i++) {
+                    sPos[i*3] += velSparks[i].x; sPos[i*3+1] += velSparks[i].y; sPos[i*3+2] += velSparks[i].z;
+                    if(sPos[i*3+1] > 60) {
+                        sPos[i*3] = (Math.random()-0.5)*15; sPos[i*3+1] = -50 + Math.random()*10; sPos[i*3+2] = (Math.random()-0.5)*10;
+                    }
                 }
+                geoSparks.attributes.position.needsUpdate = true;
             }
-            geoSparks.attributes.position.needsUpdate = true;
 
-            // 流星砸击星盘中心阵眼
             if (currentCosmicColors.length > 0) {
                 const pPos = geoParticles.attributes.position.array;
                 const pCol = geoParticles.attributes.color.array;
                 for (let i = 3500; i < 4500; i++) {
                     const i3 = i * 3;
-                    pPos[i3] *= 0.94; pPos[i3 + 1] *= 0.94; pPos[i3 + 2] *= 0.94; // 塌缩加速
+                    pPos[i3] *= 0.94; pPos[i3 + 1] *= 0.94; pPos[i3 + 2] *= 0.94; 
                     
                     const dist = Math.sqrt(pPos[i3]*pPos[i3] + pPos[i3+1]*pPos[i3+1] + pPos[i3+2]*pPos[i3+2]);
-                    if (dist < 25) { // 砸中中心剑阵！
-                        shockwave = Math.min(1.0, shockwave + 0.1); // 触发全局爆闪
+                    if (dist < 25) { 
+                        shockwave = Math.min(1.0, shockwave + 0.1); 
+                        playCollisionSound(); // 触发重低音碰撞音效
                         
                         const r = 800 + Math.random()*400; const theta = Math.random()*Math.PI*2; const phi = Math.acos((Math.random()*2)-1);
                         pPos[i3] = r*Math.sin(phi)*Math.cos(theta); pPos[i3+1] = r*Math.sin(phi)*Math.sin(theta); pPos[i3+2] = r*Math.cos(phi);
@@ -283,14 +330,14 @@
                 geoParticles.attributes.color.needsUpdate = true;
             }
 
-            composer.render(); // 使用后处理渲染
+            composer.render(); 
         }
         animate();
 
-        // ==========================================
-        // 5. 历法计算与剑阵自动注魂
-        // ==========================================
         function runCoreEngine() {
+            // 触发刀剑出鞘音效！
+            playSwordDrawSound();
+
             const y = parseInt(document.getElementById('year').value);
             const m = parseInt(document.getElementById('month').value);
             const d = parseInt(document.getElementById('day').value);
@@ -300,7 +347,7 @@
             const dayStem = bazi.getDay().charAt(0);
             
             const dayMasterWx = CHAR_TO_WUXING[dayStem];
-            const wealthWx = WEALTH_RULES[dayMasterWx]; // 你的财星
+            const wealthWx = WEALTH_RULES[dayMasterWx]; 
             const swordData = WUXING_DATA[wealthWx];
 
             document.getElementById('stats-panel').style.display = 'block';
@@ -310,7 +357,6 @@
             swordEl.innerText = swordData.name;
             swordEl.style.color = '#' + swordData.hex.toString(16).padStart(6, '0');
 
-            // 染原本命星盘
             const baziStr = bazi.getYear() + bazi.getMonth() + bazi.getDay() + bazi.getTime();
             let natalCols = [];
             for(let i=0; i<baziStr.length; i++) if(CHAR_TO_WUXING[baziStr[i]]) natalCols.push(new THREE.Color(WUXING_DATA[CHAR_TO_WUXING[baziStr[i]]].hex));
@@ -322,11 +368,13 @@
             }
             geoParticles.attributes.color.needsUpdate = true;
 
-            // 自动重铸光剑属性为你的“财星”
             swordMat.uniforms.uColor.value = swordData.vec;
             matSparks.color.setHex(swordData.hex);
             
-            trackCosmicFlow(); // 启动流年代替
+            // 祭出法器：显示光剑
+            swordGroup.visible = true;
+            
+            trackCosmicFlow(); 
         }
 
         let tracker;
