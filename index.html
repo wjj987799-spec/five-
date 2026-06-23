@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>五行命局能量场 V3</title>
+    <title>五行命局能量场 V4 (HD版)</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #030508; font-family: -apple-system, sans-serif; }
         #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
@@ -20,7 +20,7 @@
 
     <div id="ui-layer">
         <h1 class="neon-text">先天五行能量场</h1>
-        <p class="sub-text" id="status-text"><span class="status-dot">●</span> 正在初始化 3D 渲染引擎...</p>
+        <p class="sub-text" id="status-text"><span class="status-dot">●</span> 视网膜级超清渲染已开启</p>
         <div id="error-log"></div>
     </div>
 
@@ -31,15 +31,9 @@
             const errBox = document.getElementById('error-log');
             errBox.style.display = 'block';
             errBox.innerHTML += `❌ ${msg}<br>`;
-            document.getElementById('status-text').innerHTML = `<span style="color:#ef4444;">● 渲染引擎启动失败</span>`;
         }
 
         try {
-            // 1. 检查 Three.js 是否被网络拦截
-            if (typeof THREE === 'undefined') {
-                throw new Error("Three.js 核心库被网络拦截，请检查是否需要开启全局代理。");
-            }
-
             const container = document.getElementById('canvas-container');
             const scene = new THREE.Scene();
             scene.fog = new THREE.FogExp2(0x030508, 0.002);
@@ -48,34 +42,33 @@
             camera.position.set(0, 150, 400);
             camera.lookAt(0, 0, 0);
 
-            // 2. 检查手机是否支持 WebGL
-            let renderer;
-            try {
-                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            } catch (e) {
-                throw new Error("您的设备或浏览器当前不支持 WebGL 硬件加速。");
-            }
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制像素比，保护手机性能
+            // 【画质升级 1】彻底解除像素封印，调用手机原生最高清分辨率
+            renderer.setPixelRatio(window.devicePixelRatio); 
             renderer.setSize(window.innerWidth, window.innerHeight);
             container.appendChild(renderer.domElement);
 
-            // 手搓发光渐变贴图
-            function createGlowingTexture() {
+            // 【画质升级 2】手搓 4 倍超清贴图，打造锐利内核
+            function createHDTexture() {
                 const canvas = document.createElement('canvas');
-                canvas.width = 64; canvas.height = 64;
+                canvas.width = 256; // 从 64 提升到 256
+                canvas.height = 256;
                 const context = canvas.getContext('2d');
-                const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+                const gradient = context.createRadialGradient(128, 128, 0, 128, 128, 128);
+                
+                // 重新调配光晕比例：中心 5% 是绝对纯白的实体，边缘才是发光层
                 gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-                gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
-                gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
+                gradient.addColorStop(0.05, 'rgba(255, 255, 255, 1)'); // 恒星锐利内核
+                gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.6)'); // 内层光晕
+                gradient.addColorStop(0.6, 'rgba(255, 255, 255, 0.1)'); // 外层散射
                 gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                
                 context.fillStyle = gradient;
-                context.fillRect(0, 0, 64, 64);
+                context.fillRect(0, 0, 256, 256);
                 return new THREE.CanvasTexture(canvas);
             }
 
-            // 【核心修复】降低粒子数量到 3000，绝对适配手机
             const particleCount = 3000; 
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(particleCount * 3);
@@ -121,19 +114,17 @@
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
             const material = new THREE.PointsMaterial({
-                size: 10, // 增大单体尺寸弥补数量减少
-                map: createGlowingTexture(),
+                size: 8, // 缩小一丢丢体积，配合高清纹理显得更精致
+                map: createHDTexture(),
                 vertexColors: true,
                 transparent: true,
-                opacity: 0.9,
+                opacity: 1,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false
             });
 
             const particleSystem = new THREE.Points(geometry, material);
             scene.add(particleSystem);
-
-            document.getElementById('status-text').innerHTML = `<span class="status-dot">●</span> 柔性光晕渲染就绪 | 旋涡力场生成中`;
 
             const clock = new THREE.Clock();
             function animate() {
