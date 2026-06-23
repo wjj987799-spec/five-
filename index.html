@@ -3,65 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>五行命局能量场 V8 (财运对撞版)</title>
+    <title>五行命局能量场 V9 (极光共振版)</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #030508; font-family: -apple-system, sans-serif; color: #c9d1d9; }
         #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
         
         #ui-layer { 
             position: absolute; top: 40px; left: 50%; transform: translateX(-50%); z-index: 10; 
-            background: rgba(13, 17, 23, 0.75); backdrop-filter: blur(15px); 
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; width: 90%; max-width: 340px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8); transition: all 0.3s ease;
+            background: rgba(10, 14, 20, 0.65); backdrop-filter: blur(16px); 
+            border: 1px solid rgba(88, 166, 255, 0.15); border-radius: 16px; padding: 20px; width: 90%; max-width: 340px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(88, 166, 255, 0.05); transition: all 0.3s ease;
         }
         
         .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-        .neon-text { color: #fff; text-shadow: 0 0 10px rgba(88, 166, 255, 0.8); margin: 0; font-size: 18px; font-weight: bold; letter-spacing: 1px; }
+        .neon-text { color: #fff; text-shadow: 0 0 15px rgba(88, 166, 255, 0.9); margin: 0; font-size: 19px; font-weight: bold; letter-spacing: 1px; }
         .sub-text { color: #8b9bb4; font-size: 11px; margin-bottom: 15px; font-family: monospace; }
-        .status-dot { color: #58a6ff; animation: pulse 2s infinite; }
+        .status-dot { color: #00ff44; text-shadow: 0 0 8px #00ff44; animation: pulse 1.5s infinite; }
         
-        #toggle-btn { background: none; border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 12px; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+        #toggle-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 12px; padding: 4px 8px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        #toggle-btn:hover { background: rgba(88, 166, 255, 0.2); border-color: #58a6ff; }
         
         .input-flex { display: flex; gap: 8px; margin-bottom: 12px; }
         .input-group { flex: 1; }
         .input-group label { display: block; font-size: 11px; color: #8b9bb4; margin-bottom: 4px; }
         .input-group input { 
-            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid #30363d; 
-            color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 13px; box-sizing: border-box; outline: none;
+            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #30363d; 
+            color: #fff; padding: 8px 10px; border-radius: 6px; font-size: 13px; box-sizing: border-box; outline: none; transition: 0.3s;
         }
-        .input-group input:focus { border-color: #58a6ff; }
+        .input-group input:focus { border-color: #58a6ff; box-shadow: 0 0 8px rgba(88,166,255,0.4); }
         
         button.action-btn {
-            width: 100%; background: linear-gradient(90deg, #1f6feb, #ff7b72); 
-            border: none; color: white; padding: 10px; border-radius: 6px; 
-            font-weight: bold; cursor: pointer; font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            width: 100%; background: linear-gradient(135deg, #1f6feb, #b352ff); 
+            border: none; color: white; padding: 12px; border-radius: 6px; 
+            font-weight: bold; cursor: pointer; font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(179, 82, 255, 0.3);
         }
+        button.action-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(179, 82, 255, 0.5); }
 
-        /* 变现必杀：实时流时财运克应面板 */
-        #stats-panel { margin-top: 15px; font-family: monospace; font-size: 12px; display: none; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,215,0,0.2); }
-        #true-bazi { text-align: center; font-size: 18px; font-weight: bold; color: #58a6ff; letter-spacing: 2px; }
-        #wealth-resonance { text-align: center; margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px; font-size: 13px; }
+        #stats-panel { margin-top: 15px; font-family: monospace; font-size: 12px; display: none; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,215,0,0.15); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        #true-bazi { text-align: center; font-size: 19px; font-weight: bold; color: #e2e8f0; letter-spacing: 2px; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        #wealth-resonance { text-align: center; margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px; font-size: 13px; border-left: 2px solid #ff7b72; }
         
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 11px; color: #8b9bb4; }
-        .color-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 11px; color: #8b9bb4; }
         
-        #wake-btn { position: absolute; top: 20px; right: 20px; z-index: 20; display: none; background: rgba(13, 17, 23, 0.8); border: 1px solid #ff7b72; color: #fff; padding: 8px 15px; border-radius: 20px; font-weight: bold; backdrop-filter: blur(5px); cursor: pointer; box-shadow: 0 0 15px rgba(255, 123, 114, 0.4); }
+        #wake-btn { position: absolute; top: 20px; right: 20px; z-index: 20; display: none; background: rgba(13, 17, 23, 0.8); border: 1px solid #b352ff; color: #fff; padding: 8px 15px; border-radius: 20px; font-weight: bold; backdrop-filter: blur(5px); cursor: pointer; box-shadow: 0 0 15px rgba(179, 82, 255, 0.4); }
 
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.12/lunar.min.js"></script>
 </head>
 <body>
 
-    <button id="wake-btn" onclick="toggleUI(true)">👁️ 展开能量监测终端</button>
+    <button id="wake-btn" onclick="toggleUI(true)">👁️ 展开终端</button>
 
     <div id="ui-layer">
         <div class="header-flex">
             <h1 class="neon-text">Alpha-Omega 终端</h1>
             <button id="toggle-btn" onclick="toggleUI(false)">👁️ 隐藏</button>
         </div>
-        <p class="sub-text"><span class="status-dot">●</span> 实时流时气场碰撞引擎已挂载</p>
+        <p class="sub-text"><span class="status-dot">●</span> 极光共振着色器 (HDR Bloom) 已激活</p>
         
         <div id="form-content">
             <div class="input-flex">
@@ -78,20 +79,20 @@
                     <input type="number" id="day" value="15" />
                 </div>
                 <div class="input-group">
-                    <label>时(0-23)</label>
+                    <label>时</label>
                     <input type="number" id="hour" value="14" />
                 </div>
             </div>
             
-            <button class="action-btn" onclick="runCoreEngine()">启动流时财运对撞</button>
+            <button class="action-btn" onclick="runCoreEngine()">点火！启动财运暴击流</button>
 
             <div id="stats-panel">
                 <div id="true-bazi">-- -- -- --</div>
-                <div id="wealth-resonance">日主: <span id="my-daymaster">--</span> | 财星: <span id="my-wealth">--</span></div>
+                <div id="wealth-resonance">日主: <span id="my-daymaster" style="color:#fff;">--</span> | 财星: <span id="my-wealth" style="color:#ffd700;">--</span></div>
                 
-                <div class="style-box" style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 8px;">
-                    <div class="stat-row"><span>当下流时宇宙能量分布：</span><span id="current-cosmic-time" style="color:#58a6ff;">--</span></div>
-                    <div class="stat-row"><span>实时财运克应指数：</span><span id="wealth-index" style="font-weight:bold; color:#ff7b72;">0%</span></div>
+                <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;">
+                    <div class="stat-row"><span>当下宇宙能量池：</span><span id="current-cosmic-time" style="color:#58a6ff;">--</span></div>
+                    <div class="stat-row"><span>光效闪爆频率：</span><span id="wealth-index" style="font-weight:bold; color:#ff7b72; text-shadow: 0 0 5px rgba(255,123,114,0.5);">0%</span></div>
                 </div>
             </div>
         </div>
@@ -105,76 +106,61 @@
             document.getElementById('wake-btn').style.display = show ? 'none' : 'block';
         }
 
-        // ==========================================
-        // 核心算法字典
-        // ==========================================
         const WUXING_COLORS = {
-            '火': new THREE.Color(0xff2200),
-            '水': new THREE.Color(0x00ccff),
-            '木': new THREE.Color(0x00ff44),
+            '火': new THREE.Color(0xff1100), // 提升纯度
+            '水': new THREE.Color(0x00aaff),
+            '木': new THREE.Color(0x00ff33),
             '金': new THREE.Color(0xffea00),
-            '土': new THREE.Color(0xb5824c)
+            '土': new THREE.Color(0xd28f41)
         };
 
         const CHAR_TO_WUXING = {
             '甲':'木', '乙':'木', '丙':'火', '丁':'火', '戊':'土', '己':'土', '庚':'金', '辛':'金', '壬':'水', '癸':'水',
             '子':'水', '丑':'土', '寅':'木', '卯':'木', '辰':'土', '巳':'火', '午':'火', '未':'土', '申':'金', '酉':'金', '戌':'土', '亥':'水'
         };
-
-        // 我克者为财映射表
         const WEALTH_RULES = { '木':'土', '火':'金', '土':'水', '金':'木', '水':'火' };
 
         let userDayMasterWuxing = '';
         let userWealthWuxing = '';
-        let currentCosmicColors = []; // 存储当前时辰的颜色池用于撞击流
+        let currentCosmicColors = []; 
 
-        // ==========================================
-        // 3D 显卡直驱物理引擎
-        // ==========================================
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x030508, 0.0015);
+        scene.fog = new THREE.FogExp2(0x030508, 0.0012); // 让雾气淡一点，光效更通透
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.set(0, 200, 450);
+        camera.position.set(0, 250, 450);
         camera.lookAt(0, 0, 0);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         container.appendChild(renderer.domElement);
 
-        // 4000个粒子：0-3000属于本命星盘，3000-4000属于外来撞击流
-        const particleCount = 4000;
+        const particleCount = 4500; // 增加一点粒子提升密度
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(particleCount * 3);
         const colors = new Float32Array(particleCount * 3);
         
-        // 物理动力学辅助数组
         const initialY = new Float32Array(particleCount);
-        const particleSpeeds = new Float32Array(particleCount);
         const particleRadii = new Float32Array(particleCount);
         const particleAngles = new Float32Array(particleCount);
 
-        // 初始化星空基础物理属性
         for (let i = 0; i < particleCount; i++) {
             const i3 = i * 3;
-            particleRadii[i] = Math.random() * 250 + 10;
+            particleRadii[i] = Math.random() * 280 + 15;
             particleAngles[i] = Math.random() * Math.PI * 2;
-            particleSpeeds[i] = 0.01 + Math.random() * 0.02;
 
-            if (i < 3000) {
-                // 本命漩涡星盘
+            if (i < 3500) {
                 const spinAngle = particleRadii[i] * 0.02;
                 positions[i3] = Math.cos(particleAngles[i] + spinAngle) * particleRadii[i];
-                positions[i3 + 1] = Math.pow(Math.random() - 0.5, 3) * 50;
+                positions[i3 + 1] = Math.pow(Math.random() - 0.5, 3) * 60;
                 positions[i3 + 2] = Math.sin(particleAngles[i] + spinAngle) * particleRadii[i];
-                colors[i3] = 0.05; colors[i3 + 1] = 0.15; colors[i3 + 2] = 0.3; // 幽深初始色
+                colors[i3] = 0.03; colors[i3 + 1] = 0.1; colors[i3 + 2] = 0.25; 
             } else {
-                // 外围流时撞击粒子：初始全部放倒极远处隐形
-                positions[i3] = (Math.random() - 0.5) * 2000;
-                positions[i3 + 1] = 400 + Math.random() * 200;
-                positions[i3 + 2] = (Math.random() - 0.5) * 2000;
+                positions[i3] = (Math.random() - 0.5) * 2500;
+                positions[i3 + 1] = 500 + Math.random() * 300;
+                positions[i3 + 2] = (Math.random() - 0.5) * 2500;
                 colors[i3] = 0; colors[i3+1] = 0; colors[i3+2] = 0;
             }
             initialY[i] = positions[i3 + 1];
@@ -183,26 +169,47 @@
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
+        // 【核心视觉武器】带有时间、爆发变量的动态着色器
         const shaderMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0.0 },
+                uShockwave: { value: 0.0 } // 0.0 到 1.0 的爆炸能量值
+            },
             vertexShader: `
+                uniform float uTime;
+                uniform float uShockwave;
                 attribute vec3 color;
                 varying vec3 vColor;
                 void main() {
                     vColor = color;
                     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                    gl_PointSize = 1200.0 / -mvPosition.z * ${window.devicePixelRatio.toFixed(1)};
+                    
+                    // 粒子呼吸特效：根据位置和时间产生正弦波动
+                    float breathe = sin(uTime * 3.0 + position.x * 0.05) * 0.3 + 0.8;
+                    
+                    // 当爆炸发生时，粒子瞬间放大
+                    float finalSize = 1000.0 * breathe * (1.0 + uShockwave * 1.5);
+                    gl_PointSize = finalSize / -mvPosition.z * ${window.devicePixelRatio.toFixed(1)};
                     gl_Position = projectionMatrix * mvPosition;
                 }
             `,
             fragmentShader: `
+                uniform float uShockwave;
                 varying vec3 vColor;
                 void main() {
                     vec2 pt = gl_PointCoord - vec2(0.5);
                     float dist = length(pt) * 2.0;
                     if (dist > 1.0) discard;
-                    float core = smoothstep(0.12, 0.0, dist);
-                    float glow = pow(1.0 - dist, 1.8);
-                    gl_FragColor = vec4(vColor * glow * 1.6 + vec3(1.0) * core * 1.3, 1.0);
+                    
+                    // 锐利的内核与宽广的光晕
+                    float core = smoothstep(0.1, 0.0, dist);
+                    float glow = pow(1.0 - dist, 2.0);
+                    
+                    // HDR 过曝逻辑：平日 1.5 倍亮度，爆炸时瞬间飙升到 4 倍亮度
+                    float intensity = 1.5 + uShockwave * 2.5;
+                    vec3 finalColor = vColor * glow * intensity + vec3(1.0) * core * (1.2 + uShockwave * 2.0);
+                    
+                    gl_FragColor = vec4(finalColor, 1.0);
                 }
             `,
             transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
@@ -211,46 +218,51 @@
         const particleSystem = new THREE.Points(geometry, shaderMaterial);
         scene.add(particleSystem);
 
-        // ==========================================
-        // 核心实时高频对撞渲染循环
-        // ==========================================
         const clock = new THREE.Clock();
+        let collisionIntensity = 0.0; // 控制全局爆闪的变量
         
         function animate() {
             requestAnimationFrame(animate);
             const elapsedTime = clock.getElapsedTime();
             
+            // 实时传递给 GPU
+            shaderMaterial.uniforms.uTime.value = elapsedTime;
+            shaderMaterial.uniforms.uShockwave.value = collisionIntensity;
+            
+            // 爆闪能量平滑衰减
+            collisionIntensity *= 0.92; 
+
             const posAttr = geometry.attributes.position;
             const posArray = posAttr.array;
             const colAttr = geometry.attributes.color;
             const colArray = colAttr.array;
 
-            // 1. 本命星盘自转与微幅波动 (0 - 3000)
-            particleSystem.rotation.y = elapsedTime * 0.03;
+            particleSystem.rotation.y = elapsedTime * 0.04;
 
-            // 2. 流时流沙撞击流物理模拟 (3000 - 4000)
             if (currentCosmicColors.length > 0) {
-                for (let i = 3000; i < 4000; i++) {
+                // 后 1000 个流时粒子
+                for (let i = 3500; i < 4500; i++) {
                     const i3 = i * 3;
                     
-                    // 粒子向星系中心 (0, 0, 0) 塌缩暴砸
-                    posArray[i3]     *= 0.96; 
-                    posArray[i3 + 1] *= 0.96;
-                    posArray[i3 + 2] *= 0.96;
+                    // 更加猛烈的塌缩速度
+                    posArray[i3]     *= 0.95; 
+                    posArray[i3 + 1] *= 0.95;
+                    posArray[i3 + 2] *= 0.95;
 
-                    // 当流时粒子极其接近中心时，判定发生“能量对撞”，瞬间重置回外围，形成连绵不绝的冲刷感
                     const distToCenter = Math.sqrt(posArray[i3]*posArray[i3] + posArray[i3+1]*posArray[i3+1] + posArray[i3+2]*posArray[i3+2]);
-                    if (distToCenter < 8) {
-                        // 随机重生到宇宙外层球壳
+                    
+                    if (distToCenter < 12) { // 撞击阈值
+                        // 触发全局高能爆闪光效！
+                        collisionIntensity = Math.min(1.0, collisionIntensity + 0.08);
+
                         const theta = Math.random() * Math.PI * 2;
                         const phi = Math.acos((Math.random() * 2) - 1);
-                        const r = 500 + Math.random() * 200; // 外围生成
+                        const r = 600 + Math.random() * 300; 
                         
                         posArray[i3]     = r * Math.sin(phi) * Math.cos(theta);
                         posArray[i3 + 1] = r * Math.sin(phi) * Math.sin(theta);
                         posArray[i3 + 2] = r * Math.cos(phi);
 
-                        // 重新染色：从当前实时流时宇宙能量池里抓取颜色
                         const randomColor = currentCosmicColors[i % currentCosmicColors.length];
                         colArray[i3] = randomColor.r; 
                         colArray[i3 + 1] = randomColor.g; 
@@ -265,21 +277,16 @@
         }
         animate();
 
-        // ==========================================
-        // 核心算力逻辑：本命与流时实时计算
-        // ==========================================
         function runCoreEngine() {
             const y = parseInt(document.getElementById('year').value);
             const m = parseInt(document.getElementById('month').value);
             const d = parseInt(document.getElementById('day').value);
             const h = parseInt(document.getElementById('hour').value);
 
-            // 1. 推演先天本命
             const solar = Solar.fromYmdHms(y, m, d, h, 0, 0);
             const lunar = solar.getLunar();
             const bazi = lunar.getEightChar();
             
-            // 锁定日主与财星
             const dayStem = bazi.getDay().charAt(0);
             userDayMasterWuxing = CHAR_TO_WUXING[dayStem];
             userWealthWuxing = WEALTH_RULES[userDayMasterWuxing];
@@ -289,7 +296,6 @@
             document.getElementById('my-daymaster').innerText = dayStem + `(${userDayMasterWuxing})`;
             document.getElementById('my-wealth').innerText = userWealthWuxing;
 
-            // 根据本命五行比例，对前 3000 个本命粒子进行硬核染色
             const fullBaziStr = bazi.getYear() + bazi.getMonth() + bazi.getDay() + bazi.getTime();
             let natalColors = [];
             for(let i=0; i<fullBaziStr.length; i++) {
@@ -298,34 +304,30 @@
             }
             
             const colArray = geometry.attributes.color.array;
-            for (let i = 0; i < 3000; i++) {
+            for (let i = 0; i < 3500; i++) {
                 const i3 = i * 3;
                 const c = natalColors[i % natalColors.length];
                 colArray[i3] = c.r; colArray[i3 + 1] = c.g; colArray[i3 + 2] = c.b;
             }
             geometry.attributes.color.needsUpdate = true;
 
-            // 2. 激活高频时序侦测器：每 3 秒捕捉一次真实时间的流时气场
             trackLiveCosmicTime();
         }
 
-        // 定时侦测器
         let trackerInterval = null;
         function trackLiveCosmicTime() {
             if(trackerInterval) clearInterval(trackerInterval);
 
             const checkTime = () => {
                 const now = new Date();
-                // 抓取秒级精度对应的流时天体数据
                 const currentSolar = Solar.fromYmdHms(now.getFullYear(), now.getMonth() + 1, now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds());
                 const currentBazi = currentSolar.getLunar().getEightChar();
                 const cosmicStr = currentBazi.getYear() + currentBazi.getMonth() + currentBazi.getDay() + currentBazi.getTime();
 
                 document.getElementById('current-cosmic-time').innerText = `${currentBazi.getDay().charAt(0)}主 ${currentBazi.getTime()}`;
 
-                // 统计当前宇宙对冲能量池中，属于你“财星”的浓度
                 let wealthCount = 0;
-                currentCosmicColors = []; // 清空流时色彩池
+                currentCosmicColors = []; 
                 
                 for(let i=0; i<cosmicStr.length; i++) {
                     const wx = CHAR_TO_WUXING[cosmicStr[i]];
@@ -335,19 +337,18 @@
                     }
                 }
 
-                // 计算实时财运克应指数 (财星占比 + 动态随机抖动模拟秒级脉冲)
                 const baseScore = (wealthCount / 8) * 100;
-                const finalWealthScore = Math.min(100, Math.floor(baseScore + Math.random() * 15));
+                const finalWealthScore = Math.min(100, Math.floor(baseScore + Math.random() * 20));
                 
                 const indexEl = document.getElementById('wealth-index');
                 indexEl.innerText = finalWealthScore + '%';
                 
                 if(finalWealthScore > 40) {
-                    indexEl.style.color = '#ff7b72'; // 财运暴风雨，高亮红金
-                    indexEl.innerText += ' [财气破关·剧烈对撞]';
+                    indexEl.style.color = '#ff1100'; 
+                    indexEl.innerText += ' [财气爆燃·高频输出]';
                 } else {
                     indexEl.style.color = '#8b9bb4';
-                    indexEl.innerText += ' [磁场平稳·流沙蓄势]';
+                    indexEl.innerText += ' [磁场平稳·流沙漫步]';
                 }
             };
 
