@@ -3,48 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alpha-Omega V12 音效共振版</title>
+    <title>Alpha-Omega V13 深度解析版</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #010204; font-family: -apple-system, sans-serif; color: #fff; }
-        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
-        
-        #ui-layer { 
-            position: absolute; top: 40px; left: 50%; transform: translateX(-50%); z-index: 10; 
-            background: rgba(10, 14, 20, 0.7); backdrop-filter: blur(15px); 
-            border: 1px solid rgba(88, 166, 255, 0.2); border-radius: 16px; padding: 20px; width: 90%; max-width: 340px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.9); transition: all 0.3s ease;
-        }
-        
-        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-        .neon-text { color: #fff; text-shadow: 0 0 15px rgba(88, 166, 255, 0.9); margin: 0; font-size: 19px; font-weight: bold; }
-        .sub-text { color: #8b9bb4; font-size: 11px; margin-bottom: 15px; font-family: monospace; }
-        .status-dot { color: #00ff44; text-shadow: 0 0 8px #00ff44; animation: pulse 1.5s infinite; }
-        
-        #toggle-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 12px; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
-        
-        .input-flex { display: flex; gap: 8px; margin-bottom: 12px; }
-        .input-group { flex: 1; }
-        .input-group label { display: block; font-size: 11px; color: #8b9bb4; margin-bottom: 4px; }
-        .input-group input { 
-            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #30363d; 
-            color: #fff; padding: 8px; border-radius: 6px; font-size: 13px; box-sizing: border-box; outline: none;
-        }
-        .input-group input:focus { border-color: #58a6ff; }
-        
-        button.action-btn {
-            width: 100%; background: linear-gradient(135deg, #1f6feb, #b352ff); 
-            border: none; color: white; padding: 12px; border-radius: 6px; 
-            font-weight: bold; cursor: pointer; font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-            box-shadow: 0 4px 15px rgba(179, 82, 255, 0.3);
-        }
-
-        #stats-panel { margin-top: 15px; font-family: monospace; font-size: 12px; display: none; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,215,0,0.2); }
-        #true-bazi { text-align: center; font-size: 18px; font-weight: bold; color: #e2e8f0; letter-spacing: 2px; }
-        #wealth-resonance { text-align: center; margin: 10px 0; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px; font-size: 13px; border-left: 2px solid #58a6ff; }
-        
-        #wake-btn { position: absolute; top: 20px; right: 20px; z-index: 20; display: none; background: rgba(13, 17, 23, 0.8); border: 1px solid #b352ff; color: #fff; padding: 8px 15px; border-radius: 20px; font-weight: bold; backdrop-filter: blur(5px); cursor: pointer; }
-
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        body{margin:0;overflow:hidden;background-color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#333;}
+        #canvas-container{width:100vw;height:100vh;position:absolute;top:0;left:0;z-index:1;}
+        #ui-layer{position:absolute;top:40px;left:50%;transform:translateX(-50%);z-index:10;background:rgba(255,255,255,0.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(0,0,0,0.08);border-radius:16px;padding:20px;width:90%;max-width:360px;box-shadow:0 12px 40px rgba(0,0,0,0.06);transition:all 0.3s ease;}
+        .header-flex{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+        .neon-text{color:#000;margin:0;font-size:19px;font-weight:800;letter-spacing:-0.5px;}
+        .sub-text{color:#888;font-size:11px;margin-bottom:15px;font-family:monospace;}
+        .status-dot{color:#00c853;animation:pulse 1.5s infinite;}
+        #toggle-btn{background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.08);color:#333;font-size:12px;padding:4px 8px;border-radius:6px;cursor:pointer;transition:all 0.2s;}
+        #toggle-btn:hover{background:rgba(0,0,0,0.08);}
+        .input-flex{display:flex;gap:8px;margin-bottom:12px;}
+        .input-group{flex:1;}
+        .input-group label{display:block;font-size:11px;color:#666;margin-bottom:4px;font-weight:500;}
+        .input-group input{width:100%;background:#fff;border:1px solid #e0e0e0;color:#000;padding:8px;border-radius:6px;font-size:13px;box-sizing:border-box;outline:none;transition:border-color 0.2s;}
+        .input-group input:focus{border-color:#000;}
+        .api-input-container{margin-bottom:12px;}
+        .api-input-container input{width:100%;font-family:monospace;font-size:10px;}
+        button.action-btn{width:100%;background:#000;border:none;color:white;padding:12px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;transition:background 0.2s,transform 0.1s;margin-bottom:8px;}
+        button.action-btn:hover{background:#333;}
+        button.action-btn:active{transform:scale(0.98);}
+        button.secondary-btn{width:100%;background:#f0f0f0;border:1px solid #ddd;color:#333;padding:10px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;transition:all 0.2s;display:none;}
+        button.secondary-btn:hover{background:#e4e4e4;border-color:#ccc;}
+        #stats-panel{margin-top:10px;font-family:monospace;font-size:12px;display:none;background:rgba(0,0,0,0.03);padding:12px;border-radius:8px;border:1px solid rgba(0,0,0,0.04);}
+        #true-bazi{text-align:center;font-size:18px;font-weight:700;color:#000;letter-spacing:2px;}
+        #wealth-resonance{text-align:center;margin:10px 0;padding:8px;background:rgba(0,0,0,0.04);border-radius:6px;font-size:13px;border-left:3px solid #000;color:#333;}
+        #wake-btn{position:absolute;top:20px;right:20px;z-index:20;display:none;background:rgba(255,255,255,0.9);border:1px solid #e0e0e0;color:#000;padding:8px 15px;border-radius:20px;font-weight:600;backdrop-filter:blur(5px);cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.05);}
+        #report-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.95);width:85%;max-width:800px;height:80vh;z-index:100;background:rgba(255,255,255,0.9);backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);border:1px solid rgba(0,0,0,0.1);border-radius:16px;padding:30px;box-shadow:0 20px 50px rgba(0,0,0,0.1);display:none;opacity:0;transition:all 0.3s cubic-bezier(0.16,1,0.3,1);flex-direction:column;}
+        #report-modal.active{display:flex;opacity:1;transform:translate(-50%,-50%) scale(1);}
+        .modal-header{display:flex;justify-content:space-between;border-bottom:2px solid #000;padding-bottom:15px;margin-bottom:20px;}
+        .modal-title{font-size:22px;font-weight:800;margin:0;}
+        .close-btn{background:none;border:none;font-size:24px;cursor:pointer;color:#000;line-height:1;}
+        #report-content{flex:1;overflow-y:auto;font-size:15px;line-height:1.8;color:#222;padding-right:10px;white-space:pre-wrap;}
+        #report-content::-webkit-scrollbar{width:6px;}
+        #report-content::-webkit-scrollbar-track{background:rgba(0,0,0,0.05);border-radius:10px;}
+        #report-content::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.2);border-radius:10px;}
+        .loader{display:none;font-family:monospace;font-size:14px;font-weight:bold;text-align:center;margin-top:20px;}
+        .loader::after{content:"Agent 正在深度推演命理参数...";animation:typing 1.5s infinite steps(3,end);}
+        @keyframes typing{0%,100%{content:"Agent 正在深度推演...";}50%{content:"Agent 正在深度推演.";}75%{content:"Agent 正在深度推演..";}}
+        @keyframes pulse{0%{opacity:1;}50%{opacity:0.2;}100%{opacity:1;}}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
@@ -56,349 +54,130 @@
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.12/lunar.min.js"></script>
 </head>
 <body>
-
     <button id="wake-btn" onclick="toggleUI(true)">👁️ 展开阵列</button>
-
     <div id="ui-layer">
-        <div class="header-flex">
-            <h1 class="neon-text">Alpha-Omega 剑阵</h1>
-            <button id="toggle-btn" onclick="toggleUI(false)">👁️ 隐藏</button>
-        </div>
-        <p class="sub-text"><span class="status-dot">●</span> Web Audio API 频段合成已挂载</p>
-        
+        <div class="header-flex"><h1 class="neon-text">Alpha-Omega</h1><button id="toggle-btn" onclick="toggleUI(false)">👁️ 隐藏</button></div>
+        <p class="sub-text"><span class="status-dot">●</span> 核心框架运行中</p>
         <div id="form-content">
+            <div class="api-input-container"><input type="password" id="api-key" placeholder="输入 DeepSeek API Key 以解锁深度报告" /></div>
             <div class="input-flex">
-                <div class="input-group" style="flex: 1.5;"><label>年</label><input type="number" id="year" value="1998" /></div>
+                <div class="input-group" style="flex:1.5;"><label>年</label><input type="number" id="year" value="1998" /></div>
                 <div class="input-group"><label>月</label><input type="number" id="month" value="5" /></div>
                 <div class="input-group"><label>日</label><input type="number" id="day" value="15" /></div>
                 <div class="input-group"><label>时</label><input type="number" id="hour" value="14" /></div>
             </div>
-            
             <button class="action-btn" onclick="runCoreEngine()">祭出本命镇局法器</button>
-
+            <button class="secondary-btn" id="generate-report-btn" onclick="generateDeepReport()">🧠 激活 Agent 生成深度报告</button>
             <div id="stats-panel">
                 <div id="true-bazi">-- -- -- --</div>
-                <div id="wealth-resonance">阵眼剑意已锁定: <span id="sword-intent" style="color:#ffd700; font-weight:bold;">--</span></div>
+                <div id="wealth-resonance">阵眼剑意已锁定: <span id="sword-intent" style="font-weight:bold;">--</span></div>
             </div>
         </div>
     </div>
-
+    <div id="report-modal">
+        <div class="modal-header"><h2 class="modal-title">命理与财富量化解码报告</h2><button class="close-btn" onclick="closeModal()">&times;</button></div>
+        <div class="loader" id="ai-loader"></div>
+        <div id="report-content"></div>
+    </div>
     <div id="canvas-container"></div>
-
     <script>
-        // ==========================================
-        // 0. Web Audio API 纯代码声音合成器
-        // ==========================================
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx;
-
-        function initAudio() {
-            if (!audioCtx) audioCtx = new AudioContext();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-        }
-
-        // 合成：刀剑出鞘声 (高频锐利滑音 + 带通滤波)
+        function initAudio() { if(!audioCtx) audioCtx=new AudioContext(); if(audioCtx.state==='suspended') audioCtx.resume(); }
         function playSwordDrawSound() {
-            initAudio();
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            const filter = audioCtx.createBiquadFilter();
-
-            osc.type = 'square'; // 创造锐利的金属感
-            // 极速拔高的频率
-            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(2000, audioCtx.currentTime + 0.1);
-            osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.8);
-
-            filter.type = 'bandpass';
-            filter.frequency.value = 1500;
-            filter.Q.value = 5.0; // 让声音更尖锐
-
-            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 0.05); // 快速爆发
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.9); // 拖尾消散
-
-            osc.connect(filter);
-            filter.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-
-            osc.start();
-            osc.stop(audioCtx.currentTime + 1.0);
+            initAudio(); const osc=audioCtx.createOscillator(); const gainNode=audioCtx.createGain(); const filter=audioCtx.createBiquadFilter();
+            osc.type='square'; osc.frequency.setValueAtTime(400,audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(2000,audioCtx.currentTime+0.1); osc.frequency.exponentialRampToValueAtTime(300,audioCtx.currentTime+0.8);
+            filter.type='bandpass'; filter.frequency.value=1500; filter.Q.value=5.0; 
+            gainNode.gain.setValueAtTime(0,audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0.3,audioCtx.currentTime+0.05); gainNode.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.9); 
+            osc.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+1.0);
         }
-
-        // 合成：星体相撞爆闪重低音 (Sub-bass 轰击)
-        function playCollisionSound() {
-            if (!audioCtx || audioCtx.state === 'suspended') return;
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-
-            osc.type = 'sine'; // 纯正重低音
-            osc.frequency.setValueAtTime(60, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.4);
-
-            gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.5);
-        }
-
-        function toggleUI(show) {
-            document.getElementById('ui-layer').style.display = show ? 'block' : 'none';
-            document.getElementById('wake-btn').style.display = show ? 'none' : 'block';
-        }
-
-        // 五行字典
+        let currentBaziString="", currentDayMaster="", currentWealthElement="";
+        function toggleUI(show) { document.getElementById('ui-layer').style.display=show?'block':'none'; document.getElementById('wake-btn').style.display=show?'none':'block'; }
+        function closeModal() { document.getElementById('report-modal').classList.remove('active'); }
         const WUXING_DATA = {
-            '金': { hex: 0xffea00, vec: new THREE.Vector3(1.0, 0.9, 0.0), name: '庚金财剑' },
-            '木': { hex: 0x00ff44, vec: new THREE.Vector3(0.0, 1.0, 0.2), name: '乙木财剑' },
-            '水': { hex: 0x00ccff, vec: new THREE.Vector3(0.0, 0.8, 1.0), name: '真水财剑' },
-            '火': { hex: 0xff2200, vec: new THREE.Vector3(1.0, 0.1, 0.0), name: '离火财剑' },
-            '土': { hex: 0xd28f41, vec: new THREE.Vector3(0.8, 0.5, 0.2), name: '戊土财剑' }
+            '金': { hex: 0xd4af37, vec: new THREE.Vector3(0.83, 0.68, 0.21), name: '庚金财剑' },
+            '木': { hex: 0x00b33c, vec: new THREE.Vector3(0.0, 0.7, 0.23), name: '乙木财剑' },
+            '水': { hex: 0x0088cc, vec: new THREE.Vector3(0.0, 0.53, 0.8), name: '真水财剑' },
+            '火': { hex: 0xe62e00, vec: new THREE.Vector3(0.9, 0.18, 0.0), name: '离火财剑' },
+            '土': { hex: 0xb57327, vec: new THREE.Vector3(0.71, 0.45, 0.15), name: '戊土财剑' }
         };
         const CHAR_TO_WUXING = { '甲':'木', '乙':'木', '丙':'火', '丁':'火', '戊':'土', '己':'土', '庚':'金', '辛':'金', '壬':'水', '癸':'水', '子':'水', '丑':'土', '寅':'木', '卯':'木', '辰':'土', '巳':'火', '午':'火', '未':'土', '申':'金', '酉':'金', '戌':'土', '亥':'水' };
         const WEALTH_RULES = { '木':'土', '火':'金', '土':'水', '金':'木', '水':'火' };
-
-        let currentCosmicColors = []; 
-
         const container = document.getElementById('canvas-container');
-        const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x010204, 0.0015);
-
-        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.set(0, 150, 450);
-        camera.lookAt(0, 0, 0);
-
+        const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0xffffff, 0.0015);
+        const camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 2000); camera.position.set(0,150,450); camera.lookAt(0,0,0);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.toneMapping = THREE.ReinhardToneMapping;
-        container.appendChild(renderer.domElement);
-
-        const renderScene = new THREE.RenderPass(scene, camera);
-        const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2.2, 0.6, 0.1);
-        const composer = new THREE.EffectComposer(renderer);
-        composer.addPass(renderScene);
-        composer.addPass(bloomPass);
-
-        const particleCount = 4500;
-        const geoParticles = new THREE.BufferGeometry();
-        const posParticles = new Float32Array(particleCount * 3);
-        const colParticles = new Float32Array(particleCount * 3);
-        const radii = new Float32Array(particleCount);
-        const angles = new Float32Array(particleCount);
-
-        for (let i = 0; i < particleCount; i++) {
-            const i3 = i * 3;
-            radii[i] = Math.random() * 280 + 30; 
-            angles[i] = Math.random() * Math.PI * 2;
-
-            if (i < 3500) { 
-                const spin = radii[i] * 0.02;
-                posParticles[i3] = Math.cos(angles[i] + spin) * radii[i];
-                posParticles[i3 + 1] = Math.pow(Math.random() - 0.5, 3) * 60;
-                posParticles[i3 + 2] = Math.sin(angles[i] + spin) * radii[i];
-                colParticles[i3] = 0.05; colParticles[i3+1] = 0.1; colParticles[i3+2] = 0.2;
+        renderer.setPixelRatio(window.devicePixelRatio); renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0xffffff, 1); renderer.toneMapping = THREE.ReinhardToneMapping; container.appendChild(renderer.domElement);
+        const renderScene = new THREE.RenderPass(scene, camera); const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.0, 0.8, 0.5);
+        const composer = new THREE.EffectComposer(renderer); composer.addPass(renderScene); composer.addPass(bloomPass);
+        const particleCount = 4500; const geoParticles = new THREE.BufferGeometry();
+        const posParticles = new Float32Array(particleCount*3); const colParticles = new Float32Array(particleCount*3);
+        for(let i=0; i<particleCount; i++) {
+            const i3=i*3; const radius=Math.random()*280+30; const angle=Math.random()*Math.PI*2;
+            if(i<3500) { 
+                posParticles[i3]=Math.cos(angle)*radius; posParticles[i3+1]=Math.pow(Math.random()-0.5,3)*60; posParticles[i3+2]=Math.sin(angle)*radius;
+                colParticles[i3]=0.8; colParticles[i3+1]=0.8; colParticles[i3+2]=0.8; 
             } else { 
-                posParticles[i3] = (Math.random() - 0.5) * 2000;
-                posParticles[i3 + 1] = 400 + Math.random() * 300;
-                posParticles[i3 + 2] = (Math.random() - 0.5) * 2000;
-                colParticles[i3] = 0; colParticles[i3+1] = 0; colParticles[i3+2] = 0;
+                posParticles[i3]=(Math.random()-0.5)*2000; posParticles[i3+1]=400+Math.random()*300; posParticles[i3+2]=(Math.random()-0.5)*2000;
+                colParticles[i3]=0.9; colParticles[i3+1]=0.9; colParticles[i3+2]=0.9;
             }
         }
-        geoParticles.setAttribute('position', new THREE.BufferAttribute(posParticles, 3));
-        geoParticles.setAttribute('color', new THREE.BufferAttribute(colParticles, 3));
-
+        geoParticles.setAttribute('position', new THREE.BufferAttribute(posParticles, 3)); geoParticles.setAttribute('color', new THREE.BufferAttribute(colParticles, 3));
         const matParticles = new THREE.ShaderMaterial({
-            uniforms: { uTime: { value: 0.0 }, uShockwave: { value: 0.0 } },
-            vertexShader: `
-                uniform float uTime; uniform float uShockwave;
-                attribute vec3 color; varying vec3 vColor;
-                void main() {
-                    vColor = color;
-                    vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
-                    float breathe = sin(uTime * 2.0 + position.x * 0.05) * 0.3 + 0.8;
-                    gl_PointSize = (800.0 * breathe * (1.0 + uShockwave)) / -mvPos.z * ${window.devicePixelRatio.toFixed(1)};
-                    gl_Position = projectionMatrix * mvPos;
-                }
-            `,
-            fragmentShader: `
-                uniform float uShockwave; varying vec3 vColor;
-                void main() {
-                    vec2 pt = gl_PointCoord - vec2(0.5);
-                    float dist = length(pt) * 2.0; if (dist > 1.0) discard;
-                    float core = smoothstep(0.15, 0.0, dist);
-                    float glow = pow(1.0 - dist, 1.8);
-                    float intensity = 1.2 + uShockwave * 2.5;
-                    gl_FragColor = vec4(vColor * glow * intensity + vec3(1.0) * core * (1.0 + uShockwave), 1.0);
-                }
-            `,
-            transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+            uniforms: { uTime: { value: 0.0 } },
+            vertexShader: `uniform float uTime; attribute vec3 color; varying vec3 vColor; void main(){vColor=color; vec4 mvPos=modelViewMatrix*vec4(position,1.0); gl_PointSize=(800.0*(sin(uTime*2.0+position.x*0.05)*0.3+0.8))/-mvPos.z*${window.devicePixelRatio.toFixed(1)}; gl_Position=projectionMatrix*mvPos;}`,
+            fragmentShader: `varying vec3 vColor; void main(){vec2 pt=gl_PointCoord-vec2(0.5); float dist=length(pt)*2.0; if(dist>1.0) discard; float core=smoothstep(0.15,0.0,dist); float glow=pow(1.0-dist,1.8); gl_FragColor=vec4(mix(vColor,vec3(1.0),core),clamp(glow*0.6+core,0.0,1.0));}`,
+            transparent: true, blending: THREE.NormalBlending, depthWrite: false
         });
-        const particles = new THREE.Points(geoParticles, matParticles);
-        scene.add(particles);
-
-        const swordGroup = new THREE.Group();
-        swordGroup.visible = false; // 初始隐藏光剑
-        
+        const particles = new THREE.Points(geoParticles, matParticles); scene.add(particles);
+        const swordGroup = new THREE.Group(); swordGroup.visible = false; 
         const swordMat = new THREE.ShaderMaterial({
-            uniforms: { uTime: { value: 0.0 }, uColor: { value: new THREE.Vector3(0.0, 0.8, 1.0) } },
-            vertexShader: ` varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); } `,
-            fragmentShader: `
-                uniform float uTime; uniform vec3 uColor; varying vec2 vUv;
-                float random(vec2 st) { return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123); }
-                void main() {
-                    float flow = sin(vUv.y * 25.0 - uTime * 20.0) * 0.5 + 0.5;
-                    float center = abs(vUv.x - 0.5);
-                    float core = smoothstep(0.1, 0.0, center);
-                    float noise = random(vUv * 15.0 + uTime * 2.0) * 0.3;
-                    float edge = smoothstep(0.4, 0.05, center + noise);
-                    vec3 finalCol = mix(uColor * (flow + 0.8), vec3(1.0), core * 2.0);
-                    gl_FragColor = vec4(finalCol, edge * smoothstep(1.0, 0.6, vUv.y) * smoothstep(0.0, 0.1, vUv.y));
-                }
-            `,
-            transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
+            uniforms: { uTime: { value: 0.0 }, uColor: { value: new THREE.Vector3(0.0, 0.5, 0.8) } },
+            vertexShader: `varying vec2 vUv; void main(){vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+            fragmentShader: `uniform float uTime; uniform vec3 uColor; varying vec2 vUv; float random(vec2 st){return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.5453123);} void main(){float flow=sin(vUv.y*25.0-uTime*20.0)*0.5+0.5; float center=abs(vUv.x-0.5); float core=smoothstep(0.1,0.0,center); gl_FragColor=vec4(mix(uColor*(flow+0.6),vec3(1.0),core*1.5),(smoothstep(0.4,0.05,center+random(vUv*15.0+uTime*2.0)*0.3))*smoothstep(1.0,0.6,vUv.y)*smoothstep(0.0,0.1,vUv.y));}`,
+            transparent: true, blending: THREE.NormalBlending, depthWrite: false, side: THREE.DoubleSide
         });
-        
-        const swordMesh = new THREE.Mesh(new THREE.PlaneGeometry(20, 150, 32, 64), swordMat);
-        swordMesh.rotation.z = Math.PI / 6;
-        swordMesh.rotation.x = Math.PI / 4;
-        swordGroup.add(swordMesh);
-        
-        const geoSparks = new THREE.BufferGeometry();
-        const posSparks = new Float32Array(300 * 3);
-        const velSparks = [];
-        for(let i=0; i<300; i++) {
-            posSparks[i*3] = (Math.random()-0.5)*20; posSparks[i*3+1] = (Math.random()-0.5)*80; posSparks[i*3+2] = (Math.random()-0.5)*10;
-            velSparks.push({ x: (Math.random()-0.5)*0.2, y: Math.random()*0.5+0.2, z: (Math.random()-0.5)*0.2 });
-        }
-        geoSparks.setAttribute('position', new THREE.BufferAttribute(posSparks, 3));
-        const matSparks = new THREE.PointsMaterial({ color: 0x00ccff, size: 1.5, transparent: true, blending: THREE.AdditiveBlending });
-        const sparks = new THREE.Points(geoSparks, matSparks);
-        swordGroup.add(sparks);
-        scene.add(swordGroup);
-
+        const swordMesh = new THREE.Mesh(new THREE.PlaneGeometry(20, 150, 32, 64), swordMat); swordMesh.rotation.set(Math.PI/4, 0, Math.PI/6); swordGroup.add(swordMesh); scene.add(swordGroup);
         const clock = new THREE.Clock();
-        let shockwave = 0.0;
-        
-        function animate() {
-            requestAnimationFrame(animate);
-            const time = clock.getElapsedTime();
-            
-            particles.rotation.y = time * 0.03;
-            swordGroup.position.y = Math.sin(time * 2) * 8;
-            
-            matParticles.uniforms.uTime.value = time;
-            matParticles.uniforms.uShockwave.value = shockwave;
-            swordMat.uniforms.uTime.value = time;
-            shockwave *= 0.9; 
-
-            if (swordGroup.visible) {
-                const sPos = geoSparks.attributes.position.array;
-                for(let i=0; i<300; i++) {
-                    sPos[i*3] += velSparks[i].x; sPos[i*3+1] += velSparks[i].y; sPos[i*3+2] += velSparks[i].z;
-                    if(sPos[i*3+1] > 60) {
-                        sPos[i*3] = (Math.random()-0.5)*15; sPos[i*3+1] = -50 + Math.random()*10; sPos[i*3+2] = (Math.random()-0.5)*10;
-                    }
-                }
-                geoSparks.attributes.position.needsUpdate = true;
-            }
-
-            if (currentCosmicColors.length > 0) {
-                const pPos = geoParticles.attributes.position.array;
-                const pCol = geoParticles.attributes.color.array;
-                for (let i = 3500; i < 4500; i++) {
-                    const i3 = i * 3;
-                    pPos[i3] *= 0.94; pPos[i3 + 1] *= 0.94; pPos[i3 + 2] *= 0.94; 
-                    
-                    const dist = Math.sqrt(pPos[i3]*pPos[i3] + pPos[i3+1]*pPos[i3+1] + pPos[i3+2]*pPos[i3+2]);
-                    if (dist < 25) { 
-                        shockwave = Math.min(1.0, shockwave + 0.1); 
-                        playCollisionSound(); // 触发重低音碰撞音效
-                        
-                        const r = 800 + Math.random()*400; const theta = Math.random()*Math.PI*2; const phi = Math.acos((Math.random()*2)-1);
-                        pPos[i3] = r*Math.sin(phi)*Math.cos(theta); pPos[i3+1] = r*Math.sin(phi)*Math.sin(theta); pPos[i3+2] = r*Math.cos(phi);
-                        
-                        const c = currentCosmicColors[i % currentCosmicColors.length];
-                        pCol[i3] = c.r; pCol[i3+1] = c.g; pCol[i3+2] = c.b;
-                    }
-                }
-                geoParticles.attributes.position.needsUpdate = true;
-                geoParticles.attributes.color.needsUpdate = true;
-            }
-
-            composer.render(); 
-        }
+        function animate() { requestAnimationFrame(animate); const time=clock.getElapsedTime(); particles.rotation.y=time*0.03; swordGroup.position.y=Math.sin(time*2)*8; matParticles.uniforms.uTime.value=time; swordMat.uniforms.uTime.value=time; composer.render(); }
         animate();
-
         function runCoreEngine() {
-            // 触发刀剑出鞘音效！
             playSwordDrawSound();
-
-            const y = parseInt(document.getElementById('year').value);
-            const m = parseInt(document.getElementById('month').value);
-            const d = parseInt(document.getElementById('day').value);
-            const h = parseInt(document.getElementById('hour').value);
-
-            const bazi = Solar.fromYmdHms(y, m, d, h, 0, 0).getLunar().getEightChar();
-            const dayStem = bazi.getDay().charAt(0);
-            
-            const dayMasterWx = CHAR_TO_WUXING[dayStem];
-            const wealthWx = WEALTH_RULES[dayMasterWx]; 
+            const y=parseInt(document.getElementById('year').value), m=parseInt(document.getElementById('month').value), d=parseInt(document.getElementById('day').value), h=parseInt(document.getElementById('hour').value);
+            const bazi = Solar.fromYmdHms(y, m, d, h, 0, 0).getLunar().getEightChar(); currentBaziString = `${bazi.getYear()} ${bazi.getMonth()} ${bazi.getDay()} ${bazi.getTime()}`;
+            const dayStem = bazi.getDay().charAt(0); currentDayMaster = dayStem + CHAR_TO_WUXING[dayStem];
+            const wealthWx = WEALTH_RULES[CHAR_TO_WUXING[dayStem]]; currentWealthElement = wealthWx;
             const swordData = WUXING_DATA[wealthWx];
-
-            document.getElementById('stats-panel').style.display = 'block';
-            document.getElementById('true-bazi').innerText = `${bazi.getYear()} ${bazi.getMonth()} ${bazi.getDay()} ${bazi.getTime()}`;
-            
-            const swordEl = document.getElementById('sword-intent');
-            swordEl.innerText = swordData.name;
-            swordEl.style.color = '#' + swordData.hex.toString(16).padStart(6, '0');
-
-            const baziStr = bazi.getYear() + bazi.getMonth() + bazi.getDay() + bazi.getTime();
-            let natalCols = [];
+            document.getElementById('stats-panel').style.display='block'; document.getElementById('true-bazi').innerText=currentBaziString;
+            const swordEl = document.getElementById('sword-intent'); swordEl.innerText=swordData.name; swordEl.style.color='#'+swordData.hex.toString(16).padStart(6,'0');
+            const baziStr = currentBaziString.replace(/\s+/g, ''); let natalCols=[];
             for(let i=0; i<baziStr.length; i++) if(CHAR_TO_WUXING[baziStr[i]]) natalCols.push(new THREE.Color(WUXING_DATA[CHAR_TO_WUXING[baziStr[i]]].hex));
-            
             const pCol = geoParticles.attributes.color.array;
-            for(let i=0; i<3500; i++) {
-                const c = natalCols[i % natalCols.length];
-                pCol[i*3] = c.r; pCol[i*3+1] = c.g; pCol[i*3+2] = c.b;
+            for(let i=0; i<3500; i++) { const c=natalCols[i%natalCols.length]; pCol[i*3]=c.r; pCol[i*3+1]=c.g; pCol[i*3+2]=c.b; }
+            geoParticles.attributes.color.needsUpdate=true; swordMat.uniforms.uColor.value=swordData.vec; swordGroup.visible=true;
+            document.getElementById('generate-report-btn').style.display='block';
+        }
+        async function generateDeepReport() {
+            const apiKey = document.getElementById('api-key').value.trim();
+            if(!apiKey) { alert("请先输入您的 API Key 以唤醒 Agent。"); return; }
+            const modal = document.getElementById('report-modal'), contentDiv = document.getElementById('report-content'), loader = document.getElementById('ai-loader');
+            modal.classList.add('active'); contentDiv.innerHTML=""; loader.style.display="block";
+            const prompt = `你是一个融合传统命理与量化交易的AI。请根据数据生成极客风格报告(800-1500字)。数据：八字[${currentBaziString}]，日主[${currentDayMaster}]，财星[${currentWealthElement}]。包含：1.底层参数解析 2.财富流转模型 3.系统风控提示 4.Alpha破局策略(Markdown格式)。`;
+            try {
+                const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                    method:'POST', headers:{'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}`},
+                    body:JSON.stringify({ model:"deepseek-chat", messages:[{"role":"system","content":"你是一个极客数字命理大师。"},{"role":"user","content":prompt}], temperature:0.7, max_tokens:2000 })
+                });
+                if(!response.ok) throw new Error(`API 错误: ${response.status}`);
+                const data = await response.json(); const reportMarkdown = data.choices[0].message.content;
+                contentDiv.innerHTML = reportMarkdown.replace(/^### (.*$)/gim, '<h3>$1</h3>').replace(/^## (.*$)/gim, '<h2>$1</h2>').replace(/^# (.*$)/gim, '<h1>$1</h1>').replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>').replace(/\n/gim, '<br>');
+                loader.style.display="none";
+            } catch (error) {
+                loader.style.display="none"; contentDiv.innerHTML=`<span style="color:red;">Agent 连接失败: ${error.message}</span>`;
             }
-            geoParticles.attributes.color.needsUpdate = true;
-
-            swordMat.uniforms.uColor.value = swordData.vec;
-            matSparks.color.setHex(swordData.hex);
-            
-            // 祭出法器：显示光剑
-            swordGroup.visible = true;
-            
-            trackCosmicFlow(); 
         }
-
-        let tracker;
-        function trackCosmicFlow() {
-            if(tracker) clearInterval(tracker);
-            const check = () => {
-                const now = new Date();
-                const cosmicStr = Solar.fromYmdHms(now.getFullYear(), now.getMonth()+1, now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds()).getLunar().getEightChar().toString();
-                
-                currentCosmicColors = []; 
-                for(let i=0; i<cosmicStr.length; i++) {
-                    const wx = CHAR_TO_WUXING[cosmicStr[i]];
-                    if(wx) currentCosmicColors.push(new THREE.Color(WUXING_DATA[wx].hex));
-                }
-            };
-            check(); tracker = setInterval(check, 3000);
-        }
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
-        });
+        window.addEventListener('resize', () => { camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight); });
     </script>
 </body>
 </html>
