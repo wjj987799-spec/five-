@@ -1,4 +1,4 @@
-
+html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -258,7 +258,13 @@
                 setTimeout(() => { resultSec.classList.remove('opacity-0'); }, 50);
 
             } catch(e) {
-                alert("推演发生异常，请检查输入格式。");
+                // 更友好的错误提示，并把具体错误印在控制台
+                console.error("排盘推演错误详情:", e);
+                alert("引擎运算异常！请检查输入的日期时间格式是否正确，或者刷新页面重试。错误码: " + e.message);
+                
+                // 发生错误时，强制复原界面，防止死锁在加载圈
+                document.getElementById('loading-section').classList.add('hidden');
+                document.getElementById('input-section').classList.remove('hidden');
             }
         }
 
