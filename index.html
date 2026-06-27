@@ -1,284 +1,150 @@
-html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>赛博玄学 | 量子八字演算终端</title>
-    <!-- 引入 Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入农历/八字算法库 -->
-    <script src="https://unpkg.com/lunar-javascript/lunar.js"></script>
+    <title>纯粹五行 - 火星飞舞</title>
     <style>
-        :root {
-            --neon-green: #00ff41;
-            --neon-blue: #00f3ff;
-            --dark-glass: rgba(10, 15, 20, 0.75);
-        }
-        body, html { margin: 0; padding: 0; height: 100%; background-color: #050505; color: #fff; overflow-x: hidden; font-family: 'Courier New', Courier, monospace; }
-        
-        #canvas-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
-        
-        .glass-panel {
-            background: var(--dark-glass);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(0, 255, 65, 0.2);
-            box-shadow: 0 0 20px rgba(0, 255, 65, 0.05);
-            position: relative;
-            z-index: 10;
-        }
-
-        .neon-text { text-shadow: 0 0 5px var(--neon-green), 0 0 10px var(--neon-green); }
-        .neon-text-blue { text-shadow: 0 0 5px var(--neon-blue), 0 0 10px var(--neon-blue); color: var(--neon-blue); }
-        
-        .pillar-box {
-            border: 1px solid rgba(0, 243, 255, 0.3);
-            background: linear-gradient(180deg, rgba(0,243,255,0.05) 0%, rgba(0,0,0,0) 100%);
-            transition: all 0.3s ease;
-        }
-        .pillar-box:hover {
-            border-color: var(--neon-blue);
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
-            transform: translateY(-2px);
-        }
-
-        .scanline {
-            width: 100%; height: 100px;
-            background: linear-gradient(0deg, rgba(0,255,65,0) 0%, rgba(0,255,65,0.2) 50%, rgba(0,255,65,0) 100%);
-            position: absolute; top: -100px; left: 0;
-            animation: scan 3s infinite linear;
-            pointer-events: none;
-            opacity: 0.5;
-        }
-        @keyframes scan { 0% { top: -100px; } 100% { top: 100%; } }
+        /* 重置默认边距，让画布铺满全屏，背景设为纯黑 */
+        body { margin: 0; overflow: hidden; background-color: #050505; }
+        canvas { display: block; width: 100vw; height: 100vh; }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
-
-    <canvas id="canvas-bg"></canvas>
-
-    <div class="glass-panel w-full max-w-4xl p-8 rounded-2xl mx-4 my-8 overflow-hidden">
-        <div class="scanline"></div>
-        
-        <!-- 头部 -->
-        <div class="text-center mb-10">
-            <h1 class="text-3xl md:text-5xl font-bold text-green-400 neon-text mb-2 tracking-widest">量子命理演算中枢</h1>
-            <p class="text-gray-400 text-sm tracking-widest">DEEP DESTINY COMPUTATION ENGINE V2.0</p>
-        </div>
-
-        <!-- 输入区 -->
-        <div id="input-section" class="max-w-md mx-auto transition-opacity duration-500">
-            <div class="space-y-6">
-                <div>
-                    <label class="block text-green-400 text-sm mb-2">主体降生坐标 (公历日期)</label>
-                    <input type="date" id="birthDate" value="1998-08-08" class="w-full bg-black border border-green-500/50 text-white rounded p-3 focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 transition">
-                </div>
-                <div>
-                    <label class="block text-green-400 text-sm mb-2">降生时间 (时辰)</label>
-                    <input type="time" id="birthTime" value="12:00" class="w-full bg-black border border-green-500/50 text-white rounded p-3 focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 transition">
-                </div>
-                <button onclick="startComputation()" class="w-full bg-green-500/20 hover:bg-green-500/40 border border-green-500 text-green-400 font-bold py-4 rounded tracking-widest transition-all hover:neon-text mt-4">
-                    [ 启动深层演算 ]
-                </button>
-            </div>
-        </div>
-
-        <!-- 加载动画 -->
-        <div id="loading-section" class="hidden text-center py-12">
-            <div class="inline-block relative w-20 h-20">
-                <div class="absolute top-0 left-0 w-full h-full border-4 border-green-500/20 rounded-full"></div>
-                <div class="absolute top-0 left-0 w-full h-full border-4 border-green-500 rounded-full border-t-transparent animate-spin"></div>
-            </div>
-            <p class="text-green-400 mt-6 neon-text" id="loading-text">正在连接命运矩阵...</p>
-        </div>
-
-        <!-- 结果展示 -->
-        <div id="result-section" class="hidden opacity-0 transition-opacity duration-1000">
-            <button onclick="resetApp()" class="text-gray-400 hover:text-green-400 text-sm mb-6 flex items-center transition">
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                返回重新输入
-            </button>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- 左侧八字 -->
-                <div>
-                    <h2 class="text-xl text-blue-400 neon-text-blue border-b border-blue-500/30 pb-2 mb-4">四柱八字结构</h2>
-                    <div class="grid grid-cols-4 gap-2 text-center" id="bazi-grid"></div>
-                    
-                    <div class="mt-6 p-4 border border-gray-700 rounded bg-black/50">
-                        <h3 class="text-sm text-gray-400 mb-2">五行能量分布分析</h3>
-                        <div id="wuxing-analysis" class="text-sm text-gray-300 leading-relaxed"></div>
-                    </div>
-                </div>
-
-                <!-- 右侧 AI 解析 -->
-                <div class="h-full flex flex-col">
-                    <h2 class="text-xl text-green-400 neon-text border-b border-green-500/30 pb-2 mb-4">AI 命理深度解码</h2>
-                    <div class="flex-grow border border-green-500/20 rounded bg-black/40 p-5 relative overflow-hidden">
-                        <div class="scanline" style="animation-duration: 4s;"></div>
-                        <div id="ai-report" class="text-gray-200 text-sm leading-relaxed space-y-4"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // 背景粒子引擎
-        const canvas = document.getElementById('canvas-bg');
-        const ctx = canvas.getContext('2d');
-        let width, height, particles;
+        // ==========================================
+        // 1. 基础场景设置 (Scene, Camera, Renderer)
+        // ==========================================
+        const scene = new THREE.Scene();
+        // 调整相机角度，让火星看起来在屏幕中间偏下燃烧
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 15); 
 
-        function initCanvas() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            particles = [];
-            for (let i = 0; i < 60; i++) {
-                particles.push({
-                    x: Math.random() * width, y: Math.random() * height,
-                    vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5,
-                    size: Math.random() * 2 + 1
-                });
-            }
-        }
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        // 增加一点像素比设置，让高分屏下边缘更清晰细腻
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
 
-        function drawParticles() {
-            ctx.clearRect(0, 0, width, height);
-            ctx.fillStyle = 'rgba(0, 255, 65, 0.5)';
-            ctx.strokeStyle = 'rgba(0, 255, 65, 0.1)';
+        // ==========================================
+        // 2. 自定义火星着色器 (Shader)
+        // ==========================================
+        const fireVertexShader = `
+            attribute float size;
+            attribute float life;
+            varying float vLife;
             
-            particles.forEach((p, index) => {
-                p.x += p.vx; p.y += p.vy;
-                if (p.x < 0 || p.x > width) p.vx *= -1;
-                if (p.y < 0 || p.y > height) p.vy *= -1;
-                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
-                for (let j = index + 1; j < particles.length; j++) {
-                    let p2 = particles[j];
-                    if (Math.hypot(p.x - p2.x, p.y - p2.y) < 120) {
-                        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
-                    }
-                }
+            void main() {
+                vLife = life;
+                vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                // 随着生命周期变小，同时受透视影响
+                gl_PointSize = size * (vLife + 0.2) * (300.0 / -mvPosition.z); 
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `;
+
+        const fireFragmentShader = `
+            varying float vLife;
+            
+            void main() {
+                // 绘制柔和的圆形点
+                float distanceToCenter = distance(gl_PointCoord, vec2(0.5));
+                float alpha = 1.0 - smoothstep(0.0, 0.5, distanceToCenter);
+                
+                // 朱红到亮橙的过渡色
+                vec3 color = vec3(1.0, 0.35, 0.05); 
+                
+                gl_FragColor = vec4(color, alpha * vLife);
+            }
+        `;
+
+        // ==========================================
+        // 3. 构建独立粒子系统
+        // ==========================================
+        const particleCount = 1200;
+        const fireGeometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const sizes = new Float32Array(particleCount);
+        const lives = new Float32Array(particleCount);
+        const velocities = [];
+
+        for (let i = 0; i < particleCount; i++) {
+            // 火源集中在底部中心
+            positions[i * 3] = (Math.random() - 0.5) * 6;     // X
+            positions[i * 3 + 1] = -8 + Math.random() * 4;    // Y
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 6; // Z
+            
+            sizes[i] = Math.random() * 10 + 5; 
+            lives[i] = Math.random(); 
+            
+            velocities.push({
+                x: (Math.random() - 0.5) * 0.04,
+                y: Math.random() * 0.08 + 0.04,
+                z: (Math.random() - 0.5) * 0.04
             });
-            requestAnimationFrame(drawParticles);
         }
 
-        window.addEventListener('resize', initCanvas);
-        initCanvas(); drawParticles();
+        fireGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        fireGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+        fireGeometry.setAttribute('life', new THREE.BufferAttribute(lives, 1));
 
-        // 命理演算逻辑
-        function startComputation() {
-            document.getElementById('input-section').classList.add('hidden');
-            document.getElementById('loading-section').classList.remove('hidden');
-            
-            const loadingTexts = ["提取天体坐标...", "正在解析天干地支...", "生成五行能量场...", "连接 AI 推演模块..."];
-            let step = 0;
-            const textEl = document.getElementById('loading-text');
-            
-            const interval = setInterval(() => {
-                step++;
-                if (step < loadingTexts.length) {
-                    textEl.innerText = loadingTexts[step];
+        const fireMaterial = new THREE.ShaderMaterial({
+            vertexShader: fireVertexShader,
+            fragmentShader: fireFragmentShader,
+            blending: THREE.AdditiveBlending, // 核心：让重叠的火星更亮
+            depthWrite: false, 
+            transparent: true
+        });
+
+        const fireParticles = new THREE.Points(fireGeometry, fireMaterial);
+        scene.add(fireParticles);
+
+        // ==========================================
+        // 4. 物理运动与渲染循环
+        // ==========================================
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const posArray = fireParticles.geometry.attributes.position.array;
+            const lifeArray = fireParticles.geometry.attributes.life.array;
+            const time = Date.now() * 0.002;
+
+            for (let i = 0; i < particleCount; i++) {
+                lifeArray[i] -= 0.008; 
+
+                if (lifeArray[i] <= 0) {
+                    // 重置火星状态
+                    lifeArray[i] = 1.0;
+                    posArray[i * 3] = (Math.random() - 0.5) * 4;
+                    posArray[i * 3 + 1] = -8; 
+                    posArray[i * 3 + 2] = (Math.random() - 0.5) * 4;
                 } else {
-                    clearInterval(interval);
-                    executeBaziLogic();
+                    // 向上飘并加入类似热气流的横向扰动
+                    posArray[i * 3] += velocities[i].x + Math.sin(time + i) * 0.015;
+                    posArray[i * 3 + 1] += velocities[i].y;
+                    posArray[i * 3 + 2] += velocities[i].z + Math.cos(time + i) * 0.015;
                 }
-            }, 600); // 调整速度
-        }
-
-        // 获取完整颜色类名，防止 Tailwind 扫描不到
-        function getColorClass(wx) {
-            const map = { '金': 'text-yellow-500', '木': 'text-green-500', '水': 'text-blue-400', '火': 'text-red-500', '土': 'text-yellow-700' };
-            return map[wx] || 'text-gray-400';
-        }
-
-        function executeBaziLogic() {
-            try {
-                const dateStr = document.getElementById('birthDate').value;
-                const timeStr = document.getElementById('birthTime').value;
-                const [year, month, day] = dateStr.split('-').map(Number);
-                const [hour, minute] = timeStr.split(':').map(Number);
-
-                const solar = Solar.fromYmdHms(year, month, day, hour, minute, 0);
-                const bazi = solar.getLunar().getEightChar();
-                
-                const pillars = [
-                    { name: '年柱', gan: bazi.getYearGan(), zhi: bazi.getYearZhi(), ganWx: bazi.getYearGanWuXing(), zhiWx: bazi.getYearZhiWuXing() },
-                    { name: '月柱', gan: bazi.getMonthGan(), zhi: bazi.getMonthZhi(), ganWx: bazi.getMonthGanWuXing(), zhiWx: bazi.getMonthZhiWuXing() },
-                    { name: '日主', gan: bazi.getDayGan(), zhi: bazi.getDayZhi(), ganWx: bazi.getDayGanWuXing(), zhiWx: bazi.getDayZhiWuXing() },
-                    { name: '时柱', gan: bazi.getTimeGan(), zhi: bazi.getTimeZhi(), ganWx: bazi.getTimeGanWuXing(), zhiWx: bazi.getTimeZhiWuXing() }
-                ];
-
-                const baziGrid = document.getElementById('bazi-grid');
-                baziGrid.innerHTML = '';
-                pillars.forEach(p => {
-                    baziGrid.innerHTML += `
-                        <div class="pillar-box p-3 rounded flex flex-col items-center">
-                            <span class="text-xs text-gray-500 mb-2">${p.name}</span>
-                            <span class="text-2xl font-bold text-white">${p.gan}</span>
-                            <span class="text-xs font-bold ${getColorClass(p.ganWx)}">${p.ganWx}</span>
-                            <div class="w-full h-px bg-gray-700 my-2"></div>
-                            <span class="text-2xl font-bold text-gray-300">${p.zhi}</span>
-                            <span class="text-xs font-bold ${getColorClass(p.zhiWx)}">${p.zhiWx}</span>
-                        </div>
-                    `;
-                });
-
-                let wxCount = { '金': 0, '木': 0, '水': 0, '火': 0, '土': 0 };
-                pillars.forEach(p => { wxCount[p.ganWx]++; wxCount[p.zhiWx]++; });
-                
-                let wxHtml = `<div class="flex justify-between mt-2">`;
-                for (let [wx, count] of Object.entries(wxCount)) {
-                    wxHtml += `<div class="text-center"><div class="${getColorClass(wx)} font-bold">${wx}</div><div class="text-gray-400">${count}</div></div>`;
-                }
-                wxHtml += `</div>`;
-                document.getElementById('wuxing-analysis').innerHTML = `能量基数：` + wxHtml;
-
-                const dayMaster = pillars[2].gan;
-                const dayMasterWx = pillars[2].ganWx;
-                
-                let lackList = [];
-                for(let key in wxCount) { if(wxCount[key] === 0) lackList.push(key); }
-                let lackMsg = lackList.length > 0 ? 
-                    `<span class="text-red-400">警告：五行缺[${lackList.join('、')}]，底层架构失衡。</span>` : 
-                    `<span class="text-green-400">扫描完成：五行俱全，结构稳定。</span>`;
-
-                document.getElementById('ai-report').innerHTML = `
-                    <p><span class="text-blue-400">[系统载入]</span> 主体核心：<strong class="text-white text-lg">${dayMaster}</strong> (${dayMasterWx})</p>
-                    <p><strong>底层代码：</strong>日元属${dayMasterWx}，具${dayMaster}之性。执行力强，擅长系统架构。</p>
-                    <p><strong>能量场状态：</strong>${lackMsg}</p>
-                    <p><strong>Alpha破局策略：</strong>在下一迭代周期中，重点补齐环境能量。避免高风险杠杆，寻找相生属性合伙人。</p>
-                    <div class="mt-4 p-3 border border-yellow-500/30 bg-yellow-500/10 text-yellow-200 rounded text-xs">
-                        💡 进阶：当前为基础算力。需开启大运流年精算，请接入全功率引擎。
-                    </div>
-                `;
-
-                document.getElementById('loading-section').classList.add('hidden');
-                const resultSec = document.getElementById('result-section');
-                resultSec.classList.remove('hidden');
-                setTimeout(() => { resultSec.classList.remove('opacity-0'); }, 50);
-
-            } catch(e) {
-                // 更友好的错误提示，并把具体错误印在控制台
-                console.error("排盘推演错误详情:", e);
-                alert("引擎运算异常！请检查输入的日期时间格式是否正确，或者刷新页面重试。错误码: " + e.message);
-                
-                // 发生错误时，强制复原界面，防止死锁在加载圈
-                document.getElementById('loading-section').classList.add('hidden');
-                document.getElementById('input-section').classList.remove('hidden');
             }
+
+            fireParticles.geometry.attributes.position.needsUpdate = true;
+            fireParticles.geometry.attributes.life.needsUpdate = true;
+
+            // 让整个粒子群缓慢旋转，增加空间感
+            fireParticles.rotation.y += 0.002;
+
+            renderer.render(scene, camera);
         }
 
-        function resetApp() {
-            document.getElementById('result-section').classList.add('opacity-0');
-            setTimeout(() => {
-                document.getElementById('result-section').classList.add('hidden');
-                document.getElementById('input-section').classList.remove('hidden');
-                document.getElementById('loading-text').innerText = "正在连接命运矩阵...";
-            }, 500);
-        }
+        animate();
+
+        // ==========================================
+        // 5. 窗口缩放自适应
+        // ==========================================
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
-
-
-```
