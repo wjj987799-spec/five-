@@ -5,12 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>赛博玄学 | 量子八字演算终端</title>
-    <!-- 引入 Tailwind CSS 进行快速高级 UI 布局 -->
+    <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入最权威的农历/八字算法库 -->
+    <!-- 引入农历/八字算法库 -->
     <script src="https://unpkg.com/lunar-javascript/lunar.js"></script>
     <style>
-        /* 自定义赛博朋克发光特效与动画 */
         :root {
             --neon-green: #00ff41;
             --neon-blue: #00f3ff;
@@ -43,7 +42,6 @@
             transform: translateY(-2px);
         }
 
-        /* 扫描线特效 */
         .scanline {
             width: 100%; height: 100px;
             background: linear-gradient(0deg, rgba(0,255,65,0) 0%, rgba(0,255,65,0.2) 50%, rgba(0,255,65,0) 100%);
@@ -53,30 +51,22 @@
             opacity: 0.5;
         }
         @keyframes scan { 0% { top: -100px; } 100% { top: 100%; } }
-        
-        /* 隐藏滚动条 */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #050505; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--neon-green); }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
 
-    <!-- 背景粒子引擎 -->
     <canvas id="canvas-bg"></canvas>
 
-    <!-- 主控面板 -->
     <div class="glass-panel w-full max-w-4xl p-8 rounded-2xl mx-4 my-8 overflow-hidden">
         <div class="scanline"></div>
         
-        <!-- 头部标题 -->
+        <!-- 头部 -->
         <div class="text-center mb-10">
             <h1 class="text-3xl md:text-5xl font-bold text-green-400 neon-text mb-2 tracking-widest">量子命理演算中枢</h1>
             <p class="text-gray-400 text-sm tracking-widest">DEEP DESTINY COMPUTATION ENGINE V2.0</p>
         </div>
 
-        <!-- 输入区域 -->
+        <!-- 输入区 -->
         <div id="input-section" class="max-w-md mx-auto transition-opacity duration-500">
             <div class="space-y-6">
                 <div>
@@ -87,21 +77,13 @@
                     <label class="block text-green-400 text-sm mb-2">降生时间 (时辰)</label>
                     <input type="time" id="birthTime" value="12:00" class="w-full bg-black border border-green-500/50 text-white rounded p-3 focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 transition">
                 </div>
-                <div>
-                    <label class="block text-green-400 text-sm mb-2">生理性别 (影响大运排布)</label>
-                    <select id="gender" class="w-full bg-black border border-green-500/50 text-white rounded p-3 focus:outline-none focus:border-green-400 transition">
-                        <option value="1">乾造 (男)</option>
-                        <option value="0">坤造 (女)</option>
-                    </select>
-                </div>
-                
                 <button onclick="startComputation()" class="w-full bg-green-500/20 hover:bg-green-500/40 border border-green-500 text-green-400 font-bold py-4 rounded tracking-widest transition-all hover:neon-text mt-4">
                     [ 启动深层演算 ]
                 </button>
             </div>
         </div>
 
-        <!-- 加载动画区域 -->
+        <!-- 加载动画 -->
         <div id="loading-section" class="hidden text-center py-12">
             <div class="inline-block relative w-20 h-20">
                 <div class="absolute top-0 left-0 w-full h-full border-4 border-green-500/20 rounded-full"></div>
@@ -110,7 +92,7 @@
             <p class="text-green-400 mt-6 neon-text" id="loading-text">正在连接命运矩阵...</p>
         </div>
 
-        <!-- 结果展示区域 -->
+        <!-- 结果展示 -->
         <div id="result-section" class="hidden opacity-0 transition-opacity duration-1000">
             <button onclick="resetApp()" class="text-gray-400 hover:text-green-400 text-sm mb-6 flex items-center transition">
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -118,38 +100,31 @@
             </button>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- 左侧：八字命盘 -->
+                <!-- 左侧八字 -->
                 <div>
                     <h2 class="text-xl text-blue-400 neon-text-blue border-b border-blue-500/30 pb-2 mb-4">四柱八字结构</h2>
-                    <div class="grid grid-cols-4 gap-2 text-center" id="bazi-grid">
-                        <!-- JS 动态注入 -->
-                    </div>
+                    <div class="grid grid-cols-4 gap-2 text-center" id="bazi-grid"></div>
                     
                     <div class="mt-6 p-4 border border-gray-700 rounded bg-black/50">
                         <h3 class="text-sm text-gray-400 mb-2">五行能量分布分析</h3>
-                        <div id="wuxing-analysis" class="text-sm text-gray-300 leading-relaxed">
-                            <!-- JS 动态注入 -->
-                        </div>
+                        <div id="wuxing-analysis" class="text-sm text-gray-300 leading-relaxed"></div>
                     </div>
                 </div>
 
-                <!-- 右侧：AI 解析报告 -->
+                <!-- 右侧 AI 解析 -->
                 <div class="h-full flex flex-col">
                     <h2 class="text-xl text-green-400 neon-text border-b border-green-500/30 pb-2 mb-4">AI 命理深度解码</h2>
                     <div class="flex-grow border border-green-500/20 rounded bg-black/40 p-5 relative overflow-hidden">
                         <div class="scanline" style="animation-duration: 4s;"></div>
-                        <div id="ai-report" class="text-gray-200 text-sm leading-relaxed space-y-4">
-                            <!-- JS 动态注入 -->
-                        </div>
+                        <div id="ai-report" class="text-gray-200 text-sm leading-relaxed space-y-4"></div>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
-        // --- 1. 背景粒子特效引擎 (算力拉满呈现) ---
+        // 背景粒子引擎
         const canvas = document.getElementById('canvas-bg');
         const ctx = canvas.getContext('2d');
         let width, height, particles;
@@ -158,12 +133,10 @@
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
             particles = [];
-            for (let i = 0; i < 80; i++) {
+            for (let i = 0; i < 60; i++) {
                 particles.push({
-                    x: Math.random() * width,
-                    y: Math.random() * height,
-                    vx: (Math.random() - 0.5) * 0.5,
-                    vy: (Math.random() - 0.5) * 0.5,
+                    x: Math.random() * width, y: Math.random() * height,
+                    vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5,
                     size: Math.random() * 2 + 1
                 });
             }
@@ -178,20 +151,11 @@
                 p.x += p.vx; p.y += p.vy;
                 if (p.x < 0 || p.x > width) p.vx *= -1;
                 if (p.y < 0 || p.y > height) p.vy *= -1;
-
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
-
-                // 连线逻辑
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
                 for (let j = index + 1; j < particles.length; j++) {
                     let p2 = particles[j];
-                    let dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-                    if (dist < 150) {
-                        ctx.beginPath();
-                        ctx.moveTo(p.x, p.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.stroke();
+                    if (Math.hypot(p.x - p2.x, p.y - p2.y) < 120) {
+                        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
                     }
                 }
             });
@@ -199,17 +163,13 @@
         }
 
         window.addEventListener('resize', initCanvas);
-        initCanvas();
-        drawParticles();
+        initCanvas(); drawParticles();
 
-        // --- 2. 核心命理与交互逻辑 ---
-        
+        // 命理演算逻辑
         function startComputation() {
-            // UI 切换
             document.getElementById('input-section').classList.add('hidden');
             document.getElementById('loading-section').classList.remove('hidden');
             
-            // 模拟高维演算延迟体验
             const loadingTexts = ["提取天体坐标...", "正在解析天干地支...", "生成五行能量场...", "连接 AI 推演模块..."];
             let step = 0;
             const textEl = document.getElementById('loading-text');
@@ -220,96 +180,86 @@
                     textEl.innerText = loadingTexts[step];
                 } else {
                     clearInterval(interval);
-                    executeBaziLogic(); // 执行真实逻辑
+                    executeBaziLogic();
                 }
-            }, 600);
+            }, 600); // 调整速度
+        }
+
+        // 获取完整颜色类名，防止 Tailwind 扫描不到
+        function getColorClass(wx) {
+            const map = { '金': 'text-yellow-500', '木': 'text-green-500', '水': 'text-blue-400', '火': 'text-red-500', '土': 'text-yellow-700' };
+            return map[wx] || 'text-gray-400';
         }
 
         function executeBaziLogic() {
-            const dateStr = document.getElementById('birthDate').value;
-            const timeStr = document.getElementById('birthTime').value;
-            
-            const [year, month, day] = dateStr.split('-').map(Number);
-            const [hour, minute] = timeStr.split(':').map(Number);
+            try {
+                const dateStr = document.getElementById('birthDate').value;
+                const timeStr = document.getElementById('birthTime').value;
+                const [year, month, day] = dateStr.split('-').map(Number);
+                const [hour, minute] = timeStr.split(':').map(Number);
 
-            // 调用 Lunar库 计算
-            const solar = Solar.fromYmdHms(year, month, day, hour, minute, 0);
-            const lunar = solar.getLunar();
-            const bazi = lunar.getEightChar();
-            
-            // 提取数据
-            const pillars = [
-                { name: '年柱', gan: bazi.getYearGan(), zhi: bazi.getYearZhi(), ganWx: bazi.getYearGanWuXing(), zhiWx: bazi.getYearZhiWuXing() },
-                { name: '月柱', gan: bazi.getMonthGan(), zhi: bazi.getMonthZhi(), ganWx: bazi.getMonthGanWuXing(), zhiWx: bazi.getMonthZhiWuXing() },
-                { name: '日柱 (日主)', gan: bazi.getDayGan(), zhi: bazi.getDayZhi(), ganWx: bazi.getDayGanWuXing(), zhiWx: bazi.getDayZhiWuXing() },
-                { name: '时柱', gan: bazi.getTimeGan(), zhi: bazi.getTimeZhi(), ganWx: bazi.getTimeGanWuXing(), zhiWx: bazi.getTimeZhiWuXing() }
-            ];
+                const solar = Solar.fromYmdHms(year, month, day, hour, minute, 0);
+                const bazi = solar.getLunar().getEightChar();
+                
+                const pillars = [
+                    { name: '年柱', gan: bazi.getYearGan(), zhi: bazi.getYearZhi(), ganWx: bazi.getYearGanWuXing(), zhiWx: bazi.getYearZhiWuXing() },
+                    { name: '月柱', gan: bazi.getMonthGan(), zhi: bazi.getMonthZhi(), ganWx: bazi.getMonthGanWuXing(), zhiWx: bazi.getMonthZhiWuXing() },
+                    { name: '日主', gan: bazi.getDayGan(), zhi: bazi.getDayZhi(), ganWx: bazi.getDayGanWuXing(), zhiWx: bazi.getDayZhiWuXing() },
+                    { name: '时柱', gan: bazi.getTimeGan(), zhi: bazi.getTimeZhi(), ganWx: bazi.getTimeGanWuXing(), zhiWx: bazi.getTimeZhiWuXing() }
+                ];
 
-            // 渲染命盘
-            const baziGrid = document.getElementById('bazi-grid');
-            baziGrid.innerHTML = '';
-            pillars.forEach(p => {
-                baziGrid.innerHTML += `
-                    <div class="pillar-box p-3 rounded flex flex-col items-center">
-                        <span class="text-xs text-gray-500 mb-2">${p.name}</span>
-                        <span class="text-2xl font-bold text-white">${p.gan}</span>
-                        <span class="text-xs text-${getColorByWuXing(p.ganWx)}">${p.ganWx}</span>
-                        <div class="w-full h-px bg-gray-700 my-2"></div>
-                        <span class="text-2xl font-bold text-gray-300">${p.zhi}</span>
-                        <span class="text-xs text-${getColorByWuXing(p.zhiWx)}">${p.zhiWx}</span>
+                const baziGrid = document.getElementById('bazi-grid');
+                baziGrid.innerHTML = '';
+                pillars.forEach(p => {
+                    baziGrid.innerHTML += `
+                        <div class="pillar-box p-3 rounded flex flex-col items-center">
+                            <span class="text-xs text-gray-500 mb-2">${p.name}</span>
+                            <span class="text-2xl font-bold text-white">${p.gan}</span>
+                            <span class="text-xs font-bold ${getColorClass(p.ganWx)}">${p.ganWx}</span>
+                            <div class="w-full h-px bg-gray-700 my-2"></div>
+                            <span class="text-2xl font-bold text-gray-300">${p.zhi}</span>
+                            <span class="text-xs font-bold ${getColorClass(p.zhiWx)}">${p.zhiWx}</span>
+                        </div>
+                    `;
+                });
+
+                let wxCount = { '金': 0, '木': 0, '水': 0, '火': 0, '土': 0 };
+                pillars.forEach(p => { wxCount[p.ganWx]++; wxCount[p.zhiWx]++; });
+                
+                let wxHtml = `<div class="flex justify-between mt-2">`;
+                for (let [wx, count] of Object.entries(wxCount)) {
+                    wxHtml += `<div class="text-center"><div class="${getColorClass(wx)} font-bold">${wx}</div><div class="text-gray-400">${count}</div></div>`;
+                }
+                wxHtml += `</div>`;
+                document.getElementById('wuxing-analysis').innerHTML = `能量基数：` + wxHtml;
+
+                const dayMaster = pillars[2].gan;
+                const dayMasterWx = pillars[2].ganWx;
+                
+                let lackList = [];
+                for(let key in wxCount) { if(wxCount[key] === 0) lackList.push(key); }
+                let lackMsg = lackList.length > 0 ? 
+                    `<span class="text-red-400">警告：五行缺[${lackList.join('、')}]，底层架构失衡。</span>` : 
+                    `<span class="text-green-400">扫描完成：五行俱全，结构稳定。</span>`;
+
+                document.getElementById('ai-report').innerHTML = `
+                    <p><span class="text-blue-400">[系统载入]</span> 主体核心：<strong class="text-white text-lg">${dayMaster}</strong> (${dayMasterWx})</p>
+                    <p><strong>底层代码：</strong>日元属${dayMasterWx}，具${dayMaster}之性。执行力强，擅长系统架构。</p>
+                    <p><strong>能量场状态：</strong>${lackMsg}</p>
+                    <p><strong>Alpha破局策略：</strong>在下一迭代周期中，重点补齐环境能量。避免高风险杠杆，寻找相生属性合伙人。</p>
+                    <div class="mt-4 p-3 border border-yellow-500/30 bg-yellow-500/10 text-yellow-200 rounded text-xs">
+                        💡 进阶：当前为基础算力。需开启大运流年精算，请接入全功率引擎。
                     </div>
                 `;
-            });
 
-            // 统计五行并渲染
-            let wxCount = { '金': 0, '木': 0, '水': 0, '火': 0, '土': 0 };
-            pillars.forEach(p => { wxCount[p.ganWx]++; wxCount[p.zhiWx]++; });
-            let wxHtml = `<div class="flex justify-between mt-2">`;
-            for (let [wx, count] of Object.entries(wxCount)) {
-                wxHtml += `<div class="text-center"><div class="text-${getColorByWuXing(wx)} font-bold">${wx}</div><div class="text-gray-400">${count}</div></div>`;
+                document.getElementById('loading-section').classList.add('hidden');
+                const resultSec = document.getElementById('result-section');
+                resultSec.classList.remove('hidden');
+                setTimeout(() => { resultSec.classList.remove('opacity-0'); }, 50);
+
+            } catch(e) {
+                alert("推演发生异常，请检查输入格式。");
             }
-            wxHtml += `</div>`;
-            document.getElementById('wuxing-analysis').innerHTML = `原始能量基数统计：` + wxHtml;
-
-            // 生成模拟 AI 报告 (日主分析)
-            const dayMaster = pillars[2].gan;
-            const dayMasterWx = pillars[2].ganWx;
-            generateMockAIReport(dayMaster, dayMasterWx, wxCount);
-
-            // 切换到结果视图
-            document.getElementById('loading-section').classList.add('hidden');
-            const resultSec = document.getElementById('result-section');
-            resultSec.classList.remove('hidden');
-            // 延迟一点加 opacity 实现渐显
-            setTimeout(() => { resultSec.classList.remove('opacity-0'); }, 50);
-        }
-
-        // 辅助函数：根据五行返回 Tailwind 颜色类 (简化版)
-        function getColorByWuXing(wx) {
-            const map = { '金': 'yellow-500', '木': 'green-500', '水': 'blue-400', '火': 'red-500', '土': 'yellow-700' };
-            return map[wx] || 'gray-400';
-        }
-
-        function generateMockAIReport(dayMaster, wx, wxCount) {
-            const reportEl = document.getElementById('ai-report');
-            const typeText = `${wx}${dayMaster}`; // e.g. 木甲
-            
-            // 简单的随机评语逻辑，这里可以未来接入真正的 Gemini API
-            let lackMsg = "";
-            let lackList = [];
-            for(let key in wxCount) { if(wxCount[key] === 0) lackList.push(key); }
-            if(lackList.length > 0) lackMsg = `<span class="text-red-400">系统警告：命局五行缺[${lackList.join('、')}]，能量场存在结构性失衡。</span>`;
-            else lackMsg = `<span class="text-green-400">能量场扫描完成：五行俱全，底层架构稳定。</span>`;
-
-            reportEl.innerHTML = `
-                <p><span class="text-blue-400">[系统载入中]</span> 识别到主体核心（日主）为：<strong class="text-white text-lg">${dayMaster}</strong> (${wx})</p>
-                <p><strong>底层性格代码：</strong>根据《滴天髓》算法解析，日元属${wx}，具备${dayMaster}之特性。通常表现为执行力强，在复杂系统中具有天然的架构能力。</p>
-                <p><strong>能量场状态：</strong>${lackMsg}</p>
-                <p><strong>当前周期建议 (Alpha破局策略)：</strong>在接下来的数据迭代周期中，建议重点补齐环境能量。避免高风险杠杆操作，寻找与自身五行相生的合伙人。</p>
-                <div class="mt-4 p-3 border border-yellow-500/30 bg-yellow-500/10 text-yellow-200 rounded">
-                    <strong>💡 进阶解锁：</strong>当前为基础算力推演结果。如需开启流年大运精算及财富节点预测，请连接全功率 AI 引擎。
-                </div>
-            `;
         }
 
         function resetApp() {
@@ -323,5 +273,6 @@
     </script>
 </body>
 </html>
+
 
 ```
