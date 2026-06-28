@@ -3,28 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>赛博命盘 - 能量场析出</title>
+    <title>Alpha-Omega: 赛博命盘视觉化</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <style>
         body {
             margin: 0;
-            background-color: #050505; /* 模拟深邃的数字空间底色 */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            overflow: hidden;
+            background-color: #050505;
             color: #fff;
             font-family: 'Courier New', Courier, monospace;
         }
-        /* 外层发光边框，增强 UI 科技感 */
-        #chart-container {
-            position: relative;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle at center, rgba(0, 255, 255, 0.05) 0%, transparent 70%);
-            border: 1px solid rgba(0, 255, 255, 0.2);
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1) inset;
+        
+        /* 1. 底层：Three.js 粒子层 */
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1; /* 底层 */
         }
+
+        /* 2. 上层：UI 与 ECharts 数据层 */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10; /* 上层 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            /* 关键：让外层 UI 容器的鼠标事件穿透到 3D 底层 */
+            pointer-events: none; 
+        }
+
+        /* 标题样式 */
+        .cyber-title {
+            letter-spacing: 10px;
+            font-weight: 300;
+            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .cyber-subtitle {
+            font-size: 14px;
+            color: rgba(0, 255, 255, 0.6);
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+
+        /* 雷达图容器：恢复鼠标事件，使得 ECharts 的 Tooltip 能正常悬停 */
+        #chart-container {
+            pointer-events: auto; 
+            position: relative;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle at center, rgba(0, 255, 255, 0.03) 0%, transparent 70%);
+            border: 1px solid rgba(0, 255, 255, 0.15);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.05) inset;
+            border-radius: 50%; /* 变成圆形框，更契合雷达 */
+        }
+
         /* 扫描线动画效果 */
         #chart-container::before {
             content: '';
@@ -33,146 +75,191 @@
             background: linear-gradient(to bottom, transparent 50%, rgba(0, 255, 255, 0.05) 51%, transparent 51%);
             background-size: 100% 4px;
             pointer-events: none;
+            border-radius: 50%;
             z-index: 10;
         }
     </style>
 </head>
 <body>
 
-    <div id="chart-container"></div>
+    <div id="canvas-container"></div>
+    
+    <div id="ui-layer">
+        <div class="cyber-title">壬水 · 润下</div>
+        <div class="cyber-subtitle">SYSTEM: 能量场结构已解析</div>
+        <div id="chart-container"></div>
+    </div>
 
     <script>
-        // 初始化 ECharts 实例
         const chartDom = document.getElementById('chart-container');
         const myChart = echarts.init(chartDom);
-
-        // 模拟后台算法传回的五行百分比数据 (对应: 金, 木, 水, 火, 土)
         const energyData = [12, 45, 25, 5, 13];
 
         const option = {
             backgroundColor: 'transparent',
-            
-            // 极简风格的提示框，带有辉光效果
             tooltip: {
                 trigger: 'item',
                 backgroundColor: 'rgba(0, 15, 20, 0.8)',
                 borderColor: '#00ffff',
-                textStyle: {
-                    color: '#00ffff',
-                    fontFamily: 'Courier New'
-                },
-                shadowBlur: 10,
-                shadowColor: '#00ffff'
+                textStyle: { color: '#00ffff', fontFamily: 'Courier New' },
+                shadowBlur: 10, shadowColor: '#00ffff'
             },
-
-            // 雷达图核心配置
             radar: {
                 indicator: [
-                    { name: '金 (Metal)', max: 100 },
-                    { name: '木 (Wood)', max: 100 },
-                    { name: '水 (Water)', max: 100 },
-                    { name: '火 (Fire)', max: 100 },
-                    { name: '土 (Earth)', max: 100 }
+                    { name: '金', max: 100 },
+                    { name: '木', max: 100 },
+                    { name: '水', max: 100 },
+                    { name: '火', max: 100 },
+                    { name: '土', max: 100 }
                 ],
                 center: ['50%', '50%'],
                 radius: '65%',
-                shape: 'polygon', // 多边形轮廓
+                shape: 'polygon',
                 splitNumber: 5,
-                
-                // 坐标轴名称样式：赛博青色 + 间距
                 axisName: {
-                    color: '#00ffff',
-                    fontSize: 16,
-                    fontWeight: 'bold',
-                    letterSpacing: 2,
-                    textShadowBlur: 5,
-                    textShadowColor: '#00ffff'
+                    color: '#00ffff', fontSize: 18, fontWeight: 'bold',
+                    textShadowBlur: 8, textShadowColor: '#00ffff'
                 },
-                
-                // 网格分隔线：从内向外透明度渐变，模拟雷达波发散
                 splitLine: {
                     lineStyle: {
-                        color: [
-                            'rgba(0, 255, 255, 0.1)',
-                            'rgba(0, 255, 255, 0.2)',
-                            'rgba(0, 255, 255, 0.4)',
-                            'rgba(0, 255, 255, 0.6)',
-                            'rgba(0, 255, 255, 0.8)'
-                        ].reverse(),
+                        color: ['rgba(0,255,255,0.1)','rgba(0,255,255,0.2)','rgba(0,255,255,0.4)','rgba(0,255,255,0.6)','rgba(0,255,255,0.8)'].reverse(),
                         width: 1
                     }
                 },
-                
-                // 关闭默认的交替填充色，保持透明空灵感
-                splitArea: {
-                    show: false
-                },
-                
-                // 从中心向外发射的轴线
-                axisLine: {
-                    lineStyle: {
-                        color: 'rgba(0, 255, 255, 0.5)',
-                        type: 'dashed' // 虚线增加机械感
-                    }
-                }
+                splitArea: { show: false },
+                axisLine: { lineStyle: { color: 'rgba(0, 255, 255, 0.3)', type: 'dashed' } }
             },
-
-            series: [
-                {
-                    name: '五行能量分布',
-                    type: 'radar',
-                    data: [
-                        {
-                            value: energyData,
-                            name: '当前节点能量态',
-                            
-                            // 数据节点样式
-                            itemStyle: {
-                                color: '#00ffff',
-                                borderColor: '#fff',
-                                borderWidth: 1,
-                                shadowBlur: 10,
-                                shadowColor: '#00ffff'
-                            },
-                            
-                            // 连线样式：高亮发光
-                            lineStyle: {
-                                color: '#00ffff',
-                                width: 2,
-                                shadowBlur: 15,
-                                shadowColor: '#00ffff'
-                            },
-                            
-                            // 面积填充区：半透明叠加辉光
-                            areaStyle: {
-                                color: new echarts.graphic.RadialGradient(0.5, 0.5, 1, [
-                                    {
-                                        offset: 0,
-                                        color: 'rgba(0, 255, 255, 0.1)'
-                                    },
-                                    {
-                                        offset: 1,
-                                        color: 'rgba(0, 255, 255, 0.4)'
-                                    }
-                                ])
-                            }
-                        }
-                    ],
-                    // 加入一点初始动画效果
-                    animationType: 'scale',
-                    animationEasing: 'cubicOut',
-                    animationDuration: 2000
-                }
-            ]
+            series: [{
+                name: '五行分布', type: 'radar',
+                data: [{
+                    value: energyData, name: '当前节点能量态',
+                    itemStyle: { color: '#00ffff', borderColor: '#fff', borderWidth: 1, shadowBlur: 10, shadowColor: '#00ffff' },
+                    lineStyle: { color: '#00ffff', width: 2, shadowBlur: 15, shadowColor: '#00ffff' },
+                    areaStyle: {
+                        color: new echarts.graphic.RadialGradient(0.5, 0.5, 1, [
+                            { offset: 0, color: 'rgba(0, 255, 255, 0.05)' },
+                            { offset: 1, color: 'rgba(0, 255, 255, 0.3)' }
+                        ])
+                    }
+                }],
+                animationType: 'scale', animationEasing: 'cubicOut', animationDuration: 2000
+            }]
         };
-
-        // 渲染图表
         myChart.setOption(option);
+        window.addEventListener('resize', () => myChart.resize());
+    </script>
 
-        // 响应式自适应
-        window.addEventListener('resize', () => {
-            myChart.resize();
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050505, 0.2);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 3, 6); // 把相机稍微抬高一点，给中间的雷达图留出视觉空间
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.3;
+
+        // 生成粒子
+        const particleCount = 80000;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const randoms = new Float32Array(particleCount);
+
+        for (let i = 0; i < particleCount; i++) {
+            const r = Math.random() * 6; // 稍微扩大粒子场的范围
+            const theta = Math.random() * Math.PI * 2;
+            positions[i * 3] = r * Math.cos(theta);
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 0.5;
+            positions[i * 3 + 2] = r * Math.sin(theta);
+            randoms[i] = Math.random();
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
+
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uColor: { value: new THREE.Color('#00ffff') },
+                uMouse: { value: new THREE.Vector2(0, 0) }
+            },
+            vertexShader: `
+                uniform float uTime;
+                attribute float aRandom;
+                varying float vElevation;
+                void main() {
+                    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+                    float distance = length(modelPosition.xz);
+                    float wave = sin(distance * 3.0 - uTime * 1.5 + aRandom * 6.28) * 0.2;
+                    modelPosition.y += wave;
+                    modelPosition.y += (1.0 / (distance + 0.5)) * 0.5 - 0.5;
+                    vec4 viewPosition = viewMatrix * modelPosition;
+                    gl_Position = projectionMatrix * viewPosition;
+                    gl_PointSize = (20.0 * aRandom + 5.0) * (1.0 / - viewPosition.z);
+                    vElevation = modelPosition.y;
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 uColor;
+                varying float vElevation;
+                void main() {
+                    float distanceToCenter = distance(gl_PointCoord, vec2(0.5));
+                    float strength = 0.05 / distanceToCenter - 0.1;
+                    vec3 mixedColor = mix(vec3(0.0, 0.1, 0.4), uColor, vElevation * 2.0 + 0.8);
+                    gl_FragColor = vec4(mixedColor, strength);
+                }
+            `,
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
         });
+
+        const particles = new THREE.Points(geometry, material);
+        scene.add(particles);
+
+        // 鼠标交互
+        const mouse = new THREE.Vector2();
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            material.uniforms.uMouse.value = mouse;
+            particles.rotation.x = mouse.y * 0.1;
+            particles.rotation.z = -mouse.x * 0.1;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        const clock = new THREE.Clock();
+        function animate() {
+            material.uniforms.uTime.value = clock.getElapsedTime();
+            controls.update();
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+        animate();
     </script>
 </body>
 </html>
