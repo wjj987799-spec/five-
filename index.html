@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alpha-Omega: 赛博命盘聚合终端</title>
+    <title>Alpha-Omega: 赛博命盘详细解析</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background-color: #030303; color: #fff; font-family: 'Courier New', Courier, monospace; }
@@ -11,52 +11,67 @@
         
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            display: flex; flex-direction: row; /* 改为左右布局 */
+            justify-content: center; align-items: center; gap: 50px;
             pointer-events: none;
         }
 
-        /* 顶部标题 */
-        #header { position: absolute; top: 5%; text-align: center; }
-        #element-title { font-size: 32px; letter-spacing: 12px; font-weight: 300; margin-bottom: 10px; transition: all 0.5s; text-shadow: 0 0 20px rgba(255,255,255,0.5); }
-        .subtitle { font-size: 12px; color: rgba(255,255,255,0.5); letter-spacing: 2px; }
-
-        /* 中间雷达图 */
+        /* 左侧：视觉交互区 */
+        #visual-section {
+            display: flex; flex-direction: column; align-items: center; position: relative;
+        }
+        #element-title { font-size: 32px; letter-spacing: 12px; font-weight: 300; margin-bottom: 5px; transition: all 0.5s; text-shadow: 0 0 20px rgba(255,255,255,0.5); }
+        .subtitle { font-size: 12px; color: rgba(255,255,255,0.5); letter-spacing: 2px; margin-bottom: 20px;}
         #chart-container {
-            pointer-events: auto; position: relative; width: 450px; height: 450px;
+            pointer-events: auto; width: 400px; height: 400px;
             background: radial-gradient(circle at center, rgba(255, 255, 255, 0.02) 0%, transparent 70%);
             border-radius: 50%; transition: box-shadow 0.5s, border-color 0.5s;
-            margin-top: -50px;
         }
 
-        /* 底部输入控制台 */
+        /* 右侧：详细解析面板 (新增) */
+        #analysis-panel {
+            width: 450px; height: 500px;
+            background: rgba(0, 15, 20, 0.7);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1) inset;
+            backdrop-filter: blur(10px);
+            padding: 30px; box-sizing: border-box;
+            display: none; /* 初始隐藏 */
+            flex-direction: column;
+            pointer-events: auto;
+            position: relative;
+        }
+        
+        /* 面板四角的科幻修饰 */
+        #analysis-panel::before, #analysis-panel::after { content: ''; position: absolute; width: 20px; height: 20px; border: 2px solid transparent; }
+        #analysis-panel::before { top: 0; left: 0; border-top-color: #00ffff; border-left-color: #00ffff; }
+        #analysis-panel::after { bottom: 0; right: 0; border-bottom-color: #00ffff; border-right-color: #00ffff; }
+
+        .panel-header { font-size: 18px; font-weight: bold; border-bottom: 1px dashed rgba(255,255,255,0.3); padding-bottom: 10px; margin-bottom: 20px; letter-spacing: 2px; display: flex; justify-content: space-between;}
+        .status-blinking { animation: blink 1s infinite; font-size: 12px; color: #00ff66; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* 打字机文本容器 */
+        #typewriter-text {
+            font-size: 14px; line-height: 1.8; color: #e0e0e0;
+            overflow-y: auto; flex-grow: 1; padding-right: 10px;
+            text-shadow: 0 0 2px rgba(255,255,255,0.2);
+        }
+        /* 自定义滚动条 */
+        #typewriter-text::-webkit-scrollbar { width: 5px; }
+        #typewriter-text::-webkit-scrollbar-thumb { background: rgba(0, 255, 255, 0.5); }
+
+        /* 底部控制台 */
         #input-console {
-            position: absolute; bottom: 8%; display: flex; flex-direction: column; align-items: center; gap: 15px;
-            pointer-events: auto; background: rgba(0, 20, 30, 0.6); padding: 20px 40px;
-            border: 1px solid rgba(0, 255, 255, 0.3); box-shadow: 0 0 20px rgba(0, 255, 255, 0.1) inset;
-            backdrop-filter: blur(5px);
+            position: absolute; bottom: 5%; display: flex; flex-direction: column; align-items: center; gap: 10px;
+            pointer-events: auto; background: rgba(0, 0, 0, 0.6); padding: 15px 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(5px);
         }
-        
         .input-group { display: flex; gap: 15px; align-items: center; }
-        
-        input[type="datetime-local"] {
-            background: rgba(0, 0, 0, 0.5); border: 1px solid #00ffff; color: #00ffff;
-            padding: 10px 15px; font-family: 'Courier New', Courier, monospace; font-size: 16px;
-            outline: none; box-shadow: 0 0 10px rgba(0, 255, 255, 0.2) inset;
-        }
-        /* 针对 Chrome 的日期图标样式覆盖 */
+        input[type="datetime-local"] { background: rgba(0, 0, 0, 0.5); border: 1px solid #00ffff; color: #00ffff; padding: 8px 15px; font-family: inherit; font-size: 14px; outline: none; }
         ::-webkit-calendar-picker-indicator { filter: invert(1) hue-rotate(180deg); cursor: pointer; }
-
-        .btn-calc {
-            background: transparent; border: 1px solid #00ffff; color: #00ffff;
-            padding: 10px 30px; font-family: inherit; font-size: 16px; cursor: pointer;
-            letter-spacing: 2px; transition: all 0.3s; font-weight: bold; text-shadow: 0 0 5px #00ffff;
-        }
-        .btn-calc:hover { background: rgba(0, 255, 255, 0.2); box-shadow: 0 0 15px #00ffff inset; }
-        
-        /* 状态信息回显 */
-        #log-output {
-            font-size: 12px; color: #00ffff; opacity: 0.8; height: 15px; letter-spacing: 1px;
-        }
+        .btn-calc { background: rgba(0,255,255,0.1); border: 1px solid #00ffff; color: #00ffff; padding: 8px 25px; font-family: inherit; font-size: 14px; cursor: pointer; transition: all 0.3s; font-weight: bold; }
+        .btn-calc:hover { background: rgba(0, 255, 255, 0.3); box-shadow: 0 0 15px #00ffff inset; }
     </style>
 </head>
 <body>
@@ -64,266 +79,138 @@
     <div id="canvas-container"></div>
     
     <div id="ui-layer">
-        <div id="header">
-            <div id="element-title">等待接入时空数据</div>
-            <div class="subtitle">ALPHA-OMEGA QUANTITATIVE ENGINE v2.0</div>
+        <div id="visual-section">
+            <div id="element-title">输入时空坐标</div>
+            <div class="subtitle">AWAITING TEMPORAL DATA</div>
+            <div id="chart-container"></div>
         </div>
-        <div id="chart-container"></div>
-        
-        <div id="input-console">
-            <div class="input-group">
-                <input type="datetime-local" id="birth-input" value="2000-01-01T12:00">
-                <button class="btn-calc" id="calc-btn">执行命理演算</button>
+
+        <div id="analysis-panel">
+            <div class="panel-header">
+                <span id="panel-title">流年大运推演模型</span>
+                <span class="status-blinking">● LIVE DATA</span>
             </div>
-            <div id="log-output">SYSTEM: 待机中... 请输入生辰节点</div>
+            <div id="typewriter-text"></div>
+        </div>
+    </div>
+
+    <div id="input-console">
+        <div class="input-group">
+            <input type="datetime-local" id="birth-input" value="1998-08-08T08:00">
+            <button class="btn-calc" id="calc-btn">载入矩阵</button>
         </div>
     </div>
 
     <script>
-        // 五行状态元数据配置 (与 Shader 对应: 0水, 1火, 2木, 3金, 4土)
-        const elementConfigs = [
-            { type: 0, name: '壬水 · 润下', color: '#00ffff' },
-            { type: 1, name: '丙火 · 炎上', color: '#ff3300' },
-            { type: 2, name: '甲木 · 曲直', color: '#00ff66' },
-            { type: 3, name: '庚金 · 从革', color: '#ffffff' },
-            { type: 4, name: '戊土 · 稼穑', color: '#ffaa00' }
-        ];
-
-        // 模拟八字排盘算法：将时间戳确定性地哈希映射为 5 个百分比分布
-        function calculateMetaphysicsMatrix(dateString) {
-            const timestamp = new Date(dateString).getTime();
-            if (isNaN(timestamp)) return null;
-
-            // 利用时间戳生成伪随机序列，模拟五行权重的分布演算
-            let hash = timestamp.toString(16).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            
-            let weights = [];
-            let total = 0;
-            for(let i = 0; i < 5; i++) {
-                // 基于正弦函数的波动率生成因子
-                let weight = Math.abs(Math.sin(hash * (i + 1.23))) * 100;
-                weights.push(weight);
-                total += weight;
-            }
-
-            // 归一化处理（总和约束为 100）
-            weights = weights.map(w => Math.round((w / total) * 100));
-            
-            // 修正四舍五入带来的误差
-            const diff = 100 - weights.reduce((a, b) => a + b, 0);
-            weights[0] += diff;
-
-            // 寻找日主（得分最高的元素）
-            let maxIndex = 0;
-            let maxValue = weights[0];
-            for(let i = 1; i < 5; i++) {
-                if(weights[i] > maxValue) {
-                    maxValue = weights[i];
-                    maxIndex = i;
-                }
-            }
-
-            return {
-                distribution: weights, // [水, 火, 木, 金, 土] 的权重数组
-                primaryElement: elementConfigs[maxIndex] // 主属性配置
-            };
-        }
-    </script>
-
-    <script>
-        const chartDom = document.getElementById('chart-container');
-        const myChart = echarts.init(chartDom);
+        // --- 1. ECharts 初始化 ---
+        const myChart = echarts.init(document.getElementById('chart-container'));
         let currentOption = {
             backgroundColor: 'transparent',
             radar: {
-                // 注意此处的顺序需与 weights 数组 [水, 火, 木, 金, 土] 对应
                 indicator: [ {name:'水', max:100}, {name:'火', max:100}, {name:'木', max:100}, {name:'金', max:100}, {name:'土', max:100} ],
-                center: ['50%', '50%'], radius: '65%', shape: 'polygon', splitNumber: 4,
-                axisName: { color: '#ffffff', fontSize: 16, fontWeight: 'bold' },
+                center: ['50%', '50%'], radius: '60%', shape: 'polygon', splitNumber: 4,
+                axisName: { color: '#ffffff', fontSize: 14 },
                 splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
                 splitArea: { show: false },
                 axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
             },
-            series: [{
-                type: 'radar',
-                data: [{
-                    value: [20, 20, 20, 20, 20], // 初始均衡状态
-                    itemStyle: { color: '#ffffff' },
-                    lineStyle: { color: '#ffffff', width: 2 },
-                    areaStyle: { color: 'rgba(255, 255, 255, 0.1)' }
-                }]
-            }]
+            series: [{ type: 'radar', data: [{ value: [20,20,20,20,20], itemStyle:{color:'#fff'}, lineStyle:{color:'#fff', width:2}, areaStyle:{color:'rgba(255,255,255,0.1)'} }] }]
         };
         myChart.setOption(currentOption);
 
-        function hexToRgb(hex) {
-            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-            return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '255,255,255';
+        // --- 2. 模拟大模型文案生成库 ---
+        // 结合传统八字与量化金融术语的赛博断语
+        const textDatabase = {
+            wealth: [
+                "【流动性池分析】当前偏财星高透，适合捕捉高波动率标的。加密资产维度存在短期套利空间，但切忌在链上进行过高的杠杆博弈。",
+                "【资产矩阵推演】正财稳健，日主承压。建议收缩投资敞口，将资产转移至主流价值网络（如BTC或核心蓝筹），等待下一次大级别共识周期。",
+                "【波段机会预警】食神生财，短期内你对数据和盘感的直觉将极度敏锐，适合通过自动化网格或高频脚本捕获市场摩擦收益。"
+            ],
+            career: [
+                "【架构演进节点】官杀印相生，事业线进入重构期。如果是独立开发，本季度有望跑通最小可行性产品（MVP），并获得极客圈层的流量注入。",
+                "【算力分配建议】比劫夺财，团队协作可能出现代码合并冲突或利益分配不均。建议提升个人的单兵作战能力，深耕底层技术栈。"
+            ],
+            fortune: [
+                "【胜率期望演算】本周期内，印星护体，你的直觉判断准确率（如重大赛事比分预测、波胆推演）上升 23%。但切记，概率学规律不可逆，做好仓位管理。",
+                "【时空风水校准】近期最佳能量接入方位为正东方（木属性）。在进行高强度的代码构建或市场复盘时，可将显示器矩阵朝向此方位以稳定神经突触。"
+            ]
+        };
+
+        // 获取基于哈希的随机文本
+        function generateCyberFortune(hash) {
+            const getStr = (arr, offset) => arr[(hash + offset) % arr.length];
+            return `[核心数据载入完毕...]\n\n` +
+                   `> 命局概览：\n日主已确立，五行能量分布呈现不均衡态。底层逻辑架构带有极强的反共识特征。\n\n` +
+                   `> 财富与量化维度：\n${getStr(textDatabase.wealth, 1)}\n\n` +
+                   `> 事业与开发维度：\n${getStr(textDatabase.career, 2)}\n\n` +
+                   `> 博弈与胜率期望：\n${getStr(textDatabase.fortune, 3)}\n\n` +
+                   `[SYSTEM WARNING]: 命运非线性函数，以上仅为高概率路径预测。`;
         }
-    </script>
 
-    <script type="importmap">
-        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
-    </script>
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 4, 8);
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        document.getElementById('canvas-container').appendChild(renderer.domElement);
-
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true; controls.autoRotate = true; controls.autoRotateSpeed = 0.5;
-
-        const particleCount = 100000;
-        const geometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(particleCount * 3);
-        const randoms = new Float32Array(particleCount * 3); 
-
-        for (let i = 0; i < particleCount; i++) {
-            const r = Math.random() * 8;
-            const theta = Math.random() * Math.PI * 2;
-            positions[i * 3] = r * Math.cos(theta);
-            positions[i * 3 + 1] = (Math.random() - 0.5);
-            positions[i * 3 + 2] = r * Math.sin(theta);
+        // --- 3. 打字机特效引擎 ---
+        let typewriterTimeout;
+        function typeWriterEffect(text, elementId, speed = 30) {
+            clearTimeout(typewriterTimeout);
+            const el = document.getElementById(elementId);
+            el.innerHTML = '';
+            let i = 0;
             
-            randoms[i * 3] = Math.random();     
-            randoms[i * 3 + 1] = r;             
-            randoms[i * 3 + 2] = theta;         
-        }
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geometry.setAttribute('aParams', new THREE.BufferAttribute(randoms, 3));
-
-        const material = new THREE.ShaderMaterial({
-            uniforms: {
-                uTime: { value: 0 },
-                uColor: { value: new THREE.Color('#ffffff') }, // 初始白色
-                uType: { value: -1.0 } // 初始无状态
-            },
-            vertexShader: `
-                uniform float uTime;
-                uniform float uType;
-                attribute vec3 aParams;
-                varying float vElevation;
-
-                void main() {
-                    vec3 pos = position;
-                    float seed = aParams.x;
-                    float radius = aParams.y;
-                    float angle = aParams.z;
-
-                    if (uType < -0.5) {
-                        // 待机状态：平静缓慢的星环
-                        pos.y += sin(uTime + seed * 10.0) * 0.1;
-                    } else if (uType < 0.5) {
-                        float wave = sin(radius * 3.0 - uTime * 2.0 + seed * 6.28) * 0.3;
-                        pos.y += wave + (1.0 / (radius + 0.5)) * 0.5 - 0.5;
-                    } else if (uType < 1.5) {
-                        float upward = fract(seed + uTime * 0.2) * 8.0; 
-                        pos.y = -2.0 + upward;
-                        pos.x *= (1.0 - upward * 0.1) + sin(uTime * 3.0 + pos.y * 2.0 + seed) * (upward * 0.2);
-                        pos.z *= (1.0 - upward * 0.1) + cos(uTime * 2.5 + pos.y * 2.0 + seed) * (upward * 0.2);
-                    } else if (uType < 2.5) {
-                        float spiralTime = uTime * 0.5 + seed * 10.0;
-                        pos.x = cos(angle + spiralTime) * radius * (1.0 - fract(spiralTime*0.1));
-                        pos.z = sin(angle + spiralTime) * radius * (1.0 - fract(spiralTime*0.1));
-                        pos.y = fract(spiralTime * 0.1) * 6.0 - 3.0;
-                    } else if (uType < 3.5) {
-                        float glitch = step(0.98, sin(uTime * 10.0 + seed * 100.0));
-                        pos.x += glitch * sign(cos(seed * 10.0)) * 2.0;
-                        pos.y = round(pos.y * 4.0) / 4.0; 
-                        pos.z += glitch * sign(sin(seed * 10.0)) * 2.0;
+            function type() {
+                if (i < text.length) {
+                    let char = text.charAt(i);
+                    // 处理换行符
+                    if (char === '\n') {
+                        el.innerHTML += '<br>';
                     } else {
-                        float slowAngle = angle + uTime * 0.1 * (10.0 / (radius + 1.0));
-                        pos.x = cos(slowAngle) * radius;
-                        pos.z = sin(slowAngle) * radius;
-                        pos.y *= 0.1; 
+                        el.innerHTML += char;
                     }
-
-                    vec4 viewPosition = viewMatrix * modelMatrix * vec4(pos, 1.0);
-                    gl_Position = projectionMatrix * viewPosition;
-                    float sizeMultiplier = (uType > 0.5 && uType < 1.5) ? (1.0 - (pos.y + 2.0)/8.0) : 1.0;
-                    gl_PointSize = (25.0 * seed + 5.0) * (1.0 / -viewPosition.z) * max(sizeMultiplier, 0.0);
-                    vElevation = pos.y;
+                    // 自动滚动到底部
+                    el.scrollTop = el.scrollHeight;
+                    i++;
+                    typewriterTimeout = setTimeout(type, speed);
                 }
-            `,
-            fragmentShader: `
-                uniform vec3 uColor;
-                uniform float uType;
-                varying float vElevation;
+            }
+            type();
+        }
 
-                void main() {
-                    float dist = distance(gl_PointCoord, vec2(0.5));
-                    if (uType > 2.5 && uType < 3.5 && dist > 0.5) discard; 
-                    float strength = (uType > 2.5 && uType < 3.5) ? 1.0 : (0.05 / dist - 0.1);
-                    vec3 mixedColor = mix(uColor * 0.3, uColor, clamp(vElevation * 0.5 + 0.5, 0.0, 1.0));
-                    gl_FragColor = vec4(mixedColor, strength);
-                }
-            `,
-            transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
-        });
-
-        scene.add(new THREE.Points(geometry, material));
-
-        // 4. 事件总线：连接表单、算法、ECharts 与 Three.js
+        // --- 4. 核心交互绑定 ---
         document.getElementById('calc-btn').addEventListener('click', () => {
             const dateStr = document.getElementById('birth-input').value;
-            const logOutput = document.getElementById('log-output');
+            if(!dateStr) return;
+
+            // 1. 解析面板展示
+            const panel = document.getElementById('analysis-panel');
+            panel.style.display = 'flex';
             
-            if(!dateStr) {
-                logOutput.innerText = "ERROR: 时间戳缺失，无法启动引擎。";
-                logOutput.style.color = "#ff3300";
-                return;
-            }
-
-            logOutput.innerText = `SYSTEM: 正在演算时间节点 [${dateStr}] 的空间矩阵...`;
-            logOutput.style.color = "#00ff66";
-
-            // 调用八字量化哈希算法
-            const result = calculateMetaphysicsMatrix(dateStr);
-            const { primaryElement, distribution } = result;
-
-            // 瞬间切换底层粒子状态与主色调
-            material.uniforms.uType.value = primaryElement.type;
-            material.uniforms.uColor.value.set(primaryElement.color);
-            controls.autoRotateSpeed = primaryElement.type === 4 ? 0.1 : (primaryElement.type === 1 ? 1.0 : 0.5);
-
-            // 更新 UI 标题与 HUD 外框颜色
-            document.getElementById('element-title').innerText = primaryElement.name;
-            document.getElementById('element-title').style.color = primaryElement.color;
-            document.getElementById('element-title').style.textShadow = `0 0 20px ${primaryElement.color}`;
-            document.getElementById('chart-container').style.borderColor = `rgba(${hexToRgb(primaryElement.color)}, 0.4)`;
-            document.getElementById('chart-container').style.boxShadow = `0 0 30px rgba(${hexToRgb(primaryElement.color)}, 0.2) inset`;
-
-            // 驱动 ECharts 雷达图进行动画变形
-            currentOption.radar.axisName.color = primaryElement.color;
-            currentOption.series[0].data[0].value = distribution;
-            currentOption.series[0].data[0].itemStyle.color = primaryElement.color;
-            currentOption.series[0].data[0].lineStyle.color = primaryElement.color;
-            currentOption.series[0].data[0].areaStyle.color = `rgba(${hexToRgb(primaryElement.color)}, 0.3)`;
+            // 2. 模拟前端哈希演算
+            const timestamp = new Date(dateStr).getTime();
+            let hash = timestamp.toString(16).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            
+            // 这里为了演示，固定赋予一种高科技主题色（比如偏火的赤红色，或者你可以沿用之前五行切换颜色的逻辑）
+            const themeColor = '#00ffff'; 
+            
+            // 3. 驱动雷达图更新 (模拟数据)
+            currentOption.series[0].data[0].value = [
+                (hash % 40) + 10, (hash % 50) + 20, (hash % 30) + 15, (hash % 60) + 5, (hash % 45) + 10
+            ];
+            currentOption.radar.axisName.color = themeColor;
+            currentOption.series[0].data[0].itemStyle.color = themeColor;
+            currentOption.series[0].data[0].lineStyle.color = themeColor;
+            currentOption.series[0].data[0].areaStyle.color = `rgba(0,255,255,0.2)`;
             myChart.setOption(currentOption);
-        });
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            // 4. 生成运势文本并启动打字机特效
+            const detailedFortuneText = generateCyberFortune(hash);
+            document.getElementById('panel-title').style.color = themeColor;
+            document.getElementById('analysis-panel').style.borderColor = themeColor;
+            
+            // 稍微延迟一下，模拟网络请求大模型的时间
+            document.getElementById('typewriter-text').innerHTML = '<span style="color:#00ff66">正在连接量子算力中心获取推演报告...</span>';
+            setTimeout(() => {
+                typeWriterEffect(detailedFortuneText, 'typewriter-text', 40);
+            }, 800);
         });
-
-        const clock = new THREE.Clock();
-        function animate() {
-            material.uniforms.uTime.value = clock.getElapsedTime();
-            controls.update();
-            renderer.render(scene, camera);
-            requestAnimationFrame(animate);
-        }
-        animate();
     </script>
-</body>
+
+    </body>
 </html>
