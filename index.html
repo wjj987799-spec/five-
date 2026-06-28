@@ -3,81 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alpha-Omega: 赛博命盘视觉化</title>
+    <title>Alpha-Omega - 五行粒子矩阵</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #050505;
-            color: #fff;
-            font-family: 'Courier New', Courier, monospace;
-        }
+        body { margin: 0; overflow: hidden; background-color: #030303; color: #fff; font-family: 'Courier New', Courier, monospace; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
         
-        /* 1. 底层：Three.js 粒子层 */
-        #canvas-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1; /* 底层 */
-        }
-
-        /* 2. 上层：UI 与 ECharts 数据层 */
         #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 10; /* 上层 */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            /* 关键：让外层 UI 容器的鼠标事件穿透到 3D 底层 */
-            pointer-events: none; 
-        }
-
-        /* 标题样式 */
-        .cyber-title {
-            letter-spacing: 10px;
-            font-weight: 300;
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .cyber-subtitle {
-            font-size: 14px;
-            color: rgba(0, 255, 255, 0.6);
-            margin-bottom: 40px;
-            letter-spacing: 2px;
-        }
-
-        /* 雷达图容器：恢复鼠标事件，使得 ECharts 的 Tooltip 能正常悬停 */
-        #chart-container {
-            pointer-events: auto; 
-            position: relative;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle at center, rgba(0, 255, 255, 0.03) 0%, transparent 70%);
-            border: 1px solid rgba(0, 255, 255, 0.15);
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.05) inset;
-            border-radius: 50%; /* 变成圆形框，更契合雷达 */
-        }
-
-        /* 扫描线动画效果 */
-        #chart-container::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(to bottom, transparent 50%, rgba(0, 255, 255, 0.05) 51%, transparent 51%);
-            background-size: 100% 4px;
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
             pointer-events: none;
-            border-radius: 50%;
-            z-index: 10;
         }
+
+        /* 顶部标题区 */
+        #header { position: absolute; top: 5%; text-align: center; }
+        #element-title { font-size: 32px; letter-spacing: 12px; font-weight: 300; margin-bottom: 10px; transition: color 0.5s, text-shadow 0.5s; }
+        .subtitle { font-size: 12px; color: rgba(255,255,255,0.5); letter-spacing: 2px; }
+
+        /* 雷达图 */
+        #chart-container {
+            pointer-events: auto; position: relative; width: 450px; height: 450px;
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.02) 0%, transparent 70%);
+            border-radius: 50%; transition: box-shadow 0.5s, border-color 0.5s;
+        }
+
+        /* 底部控制台：五行切换按钮 */
+        #controls {
+            position: absolute; bottom: 8%; display: flex; gap: 20px; pointer-events: auto;
+        }
+        .btn {
+            background: transparent; border: 1px solid rgba(255,255,255,0.3); color: #fff;
+            padding: 10px 25px; font-family: inherit; font-size: 16px; cursor: pointer;
+            letter-spacing: 2px; transition: all 0.3s; position: relative; overflow: hidden;
+        }
+        .btn:hover { background: rgba(255,255,255,0.1); }
+        .btn.active { box-shadow: 0 0 15px currentColor inset; border-color: currentColor; }
     </style>
 </head>
 <body>
@@ -85,68 +45,70 @@
     <div id="canvas-container"></div>
     
     <div id="ui-layer">
-        <div class="cyber-title">壬水 · 润下</div>
-        <div class="cyber-subtitle">SYSTEM: 能量场结构已解析</div>
+        <div id="header">
+            <div id="element-title">壬水 · 润下</div>
+            <div class="subtitle">CYBER-METAPHYSICS MATRIX v1.0</div>
+        </div>
         <div id="chart-container"></div>
+        
+        <div id="controls">
+            <button class="btn" data-type="3" data-color="#ffffff" data-name="庚金 · 从革" data-data="[85, 10, 20, 15, 30]">金</button>
+            <button class="btn" data-type="2" data-color="#00ff66" data-name="甲木 · 曲直" data-data="[15, 88, 30, 20, 10]">木</button>
+            <button class="btn active" data-type="0" data-color="#00ffff" data-name="壬水 · 润下" style="color:#00ffff; border-color:#00ffff;" data-data="[25, 30, 85, 10, 15]">水</button>
+            <button class="btn" data-type="1" data-color="#ff3300" data-name="丙火 · 炎上" data-data="[10, 20, 5, 90, 25]">火</button>
+            <button class="btn" data-type="4" data-color="#ffaa00" data-name="戊土 · 稼穑" data-data="[30, 10, 15, 25, 85]">土</button>
+        </div>
     </div>
 
     <script>
         const chartDom = document.getElementById('chart-container');
         const myChart = echarts.init(chartDom);
-        const energyData = [12, 45, 25, 5, 13];
-
-        const option = {
+        let currentOption = {
             backgroundColor: 'transparent',
-            tooltip: {
-                trigger: 'item',
-                backgroundColor: 'rgba(0, 15, 20, 0.8)',
-                borderColor: '#00ffff',
-                textStyle: { color: '#00ffff', fontFamily: 'Courier New' },
-                shadowBlur: 10, shadowColor: '#00ffff'
-            },
             radar: {
-                indicator: [
-                    { name: '金', max: 100 },
-                    { name: '木', max: 100 },
-                    { name: '水', max: 100 },
-                    { name: '火', max: 100 },
-                    { name: '土', max: 100 }
-                ],
-                center: ['50%', '50%'],
-                radius: '65%',
-                shape: 'polygon',
-                splitNumber: 5,
-                axisName: {
-                    color: '#00ffff', fontSize: 18, fontWeight: 'bold',
-                    textShadowBlur: 8, textShadowColor: '#00ffff'
-                },
-                splitLine: {
-                    lineStyle: {
-                        color: ['rgba(0,255,255,0.1)','rgba(0,255,255,0.2)','rgba(0,255,255,0.4)','rgba(0,255,255,0.6)','rgba(0,255,255,0.8)'].reverse(),
-                        width: 1
-                    }
-                },
+                indicator: [ {name:'金', max:100}, {name:'木', max:100}, {name:'水', max:100}, {name:'火', max:100}, {name:'土', max:100} ],
+                center: ['50%', '50%'], radius: '65%', shape: 'polygon', splitNumber: 4,
+                axisName: { color: '#00ffff', fontSize: 16, fontWeight: 'bold', textShadowBlur: 5, textShadowColor: '#00ffff' },
+                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
                 splitArea: { show: false },
-                axisLine: { lineStyle: { color: 'rgba(0, 255, 255, 0.3)', type: 'dashed' } }
+                axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
             },
             series: [{
-                name: '五行分布', type: 'radar',
+                type: 'radar',
                 data: [{
-                    value: energyData, name: '当前节点能量态',
-                    itemStyle: { color: '#00ffff', borderColor: '#fff', borderWidth: 1, shadowBlur: 10, shadowColor: '#00ffff' },
-                    lineStyle: { color: '#00ffff', width: 2, shadowBlur: 15, shadowColor: '#00ffff' },
-                    areaStyle: {
-                        color: new echarts.graphic.RadialGradient(0.5, 0.5, 1, [
-                            { offset: 0, color: 'rgba(0, 255, 255, 0.05)' },
-                            { offset: 1, color: 'rgba(0, 255, 255, 0.3)' }
-                        ])
-                    }
-                }],
-                animationType: 'scale', animationEasing: 'cubicOut', animationDuration: 2000
+                    value: [25, 30, 85, 10, 15],
+                    itemStyle: { color: '#00ffff' },
+                    lineStyle: { color: '#00ffff', width: 2, shadowBlur: 10, shadowColor: '#00ffff' },
+                    areaStyle: { color: 'rgba(0, 255, 255, 0.2)' }
+                }]
             }]
         };
-        myChart.setOption(option);
-        window.addEventListener('resize', () => myChart.resize());
+        myChart.setOption(currentOption);
+
+        // UI 状态更新逻辑
+        function updateUI(color, name, dataStr) {
+            const dataArr = JSON.parse(dataStr);
+            document.getElementById('element-title').innerText = name;
+            document.getElementById('element-title').style.color = color;
+            document.getElementById('element-title').style.textShadow = `0 0 20px ${color}`;
+            document.getElementById('chart-container').style.borderColor = `rgba(${hexToRgb(color)}, 0.3)`;
+            document.getElementById('chart-container').style.boxShadow = `0 0 30px rgba(${hexToRgb(color)}, 0.1) inset`;
+
+            // 更新雷达图
+            currentOption.radar.axisName.color = color;
+            currentOption.radar.axisName.textShadowColor = color;
+            currentOption.series[0].data[0].value = dataArr;
+            currentOption.series[0].data[0].itemStyle.color = color;
+            currentOption.series[0].data[0].lineStyle.color = color;
+            currentOption.series[0].data[0].lineStyle.shadowColor = color;
+            currentOption.series[0].data[0].areaStyle.color = `rgba(${hexToRgb(color)}, 0.2)`;
+            myChart.setOption(currentOption);
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0,255,255';
+        }
     </script>
 
     <script type="importmap">
@@ -161,89 +123,157 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x050505, 0.2);
-
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 3, 6); // 把相机稍微抬高一点，给中间的雷达图留出视觉空间
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 4, 8);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        container.appendChild(renderer.domElement);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
 
         const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.autoRotate = true;
-        controls.autoRotateSpeed = 0.3;
+        controls.enableDamping = true; controls.autoRotate = true; controls.autoRotateSpeed = 0.5;
 
-        // 生成粒子
-        const particleCount = 80000;
+        const particleCount = 100000;
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(particleCount * 3);
-        const randoms = new Float32Array(particleCount);
+        const randoms = new Float32Array(particleCount * 3); // x: 随机种子, y: 半径, z: 角度
 
         for (let i = 0; i < particleCount; i++) {
-            const r = Math.random() * 6; // 稍微扩大粒子场的范围
+            const r = Math.random() * 8;
             const theta = Math.random() * Math.PI * 2;
             positions[i * 3] = r * Math.cos(theta);
-            positions[i * 3 + 1] = (Math.random() - 0.5) * 0.5;
+            positions[i * 3 + 1] = (Math.random() - 0.5);
             positions[i * 3 + 2] = r * Math.sin(theta);
-            randoms[i] = Math.random();
+            
+            randoms[i * 3] = Math.random();     // seed
+            randoms[i * 3 + 1] = r;             // radius
+            randoms[i * 3 + 2] = theta;         // angle
         }
-
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
+        geometry.setAttribute('aParams', new THREE.BufferAttribute(randoms, 3));
 
+        // 终极统一 Shader：整合金木水火土五种物理形态
         const material = new THREE.ShaderMaterial({
             uniforms: {
                 uTime: { value: 0 },
                 uColor: { value: new THREE.Color('#00ffff') },
-                uMouse: { value: new THREE.Vector2(0, 0) }
+                uType: { value: 0.0 } // 0:水, 1:火, 2:木, 3:金, 4:土
             },
             vertexShader: `
                 uniform float uTime;
-                attribute float aRandom;
+                uniform float uType;
+                attribute vec3 aParams; // x:seed, y:radius, z:angle
                 varying float vElevation;
+
+                // 简单的伪随机与噪点函数
+                float rand(vec2 co){ return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453); }
+
                 void main() {
-                    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
-                    float distance = length(modelPosition.xz);
-                    float wave = sin(distance * 3.0 - uTime * 1.5 + aRandom * 6.28) * 0.2;
-                    modelPosition.y += wave;
-                    modelPosition.y += (1.0 / (distance + 0.5)) * 0.5 - 0.5;
-                    vec4 viewPosition = viewMatrix * modelPosition;
+                    vec3 pos = position;
+                    float seed = aParams.x;
+                    float radius = aParams.y;
+                    float angle = aParams.z;
+
+                    if (uType < 0.5) {
+                        // 0: 【水】 - 涟漪与漩涡
+                        float wave = sin(radius * 3.0 - uTime * 2.0 + seed * 6.28) * 0.3;
+                        pos.y += wave + (1.0 / (radius + 0.5)) * 0.5 - 0.5;
+                        
+                    } else if (uType < 1.5) {
+                        // 1: 【火】 - 向上升腾、混沌湍流
+                        float upward = fract(seed + uTime * 0.2) * 8.0; // 生命周期
+                        pos.y = -2.0 + upward;
+                        float noiseX = sin(uTime * 3.0 + pos.y * 2.0 + seed) * (upward * 0.2);
+                        float noiseZ = cos(uTime * 2.5 + pos.y * 2.0 + seed) * (upward * 0.2);
+                        pos.x *= (1.0 - upward * 0.1) + noiseX; // 向上聚拢并扰动
+                        pos.z *= (1.0 - upward * 0.1) + noiseZ;
+                        
+                    } else if (uType < 2.5) {
+                        // 2: 【木】 - 螺旋向上生长
+                        float spiralTime = uTime * 0.5 + seed * 10.0;
+                        pos.x = cos(angle + spiralTime) * radius * (1.0 - fract(spiralTime*0.1));
+                        pos.z = sin(angle + spiralTime) * radius * (1.0 - fract(spiralTime*0.1));
+                        pos.y = fract(spiralTime * 0.1) * 6.0 - 3.0;
+                        
+                    } else if (uType < 3.5) {
+                        // 3: 【金】 - 机械矩阵、量子故障、锐角折线
+                        float glitch = step(0.98, sin(uTime * 10.0 + seed * 100.0));
+                        pos.x += glitch * sign(cos(seed * 10.0)) * 2.0;
+                        pos.y = round(pos.y * 4.0) / 4.0; // 阶梯化高度，体现金属网格感
+                        pos.z += glitch * sign(sin(seed * 10.0)) * 2.0;
+                        
+                    } else {
+                        // 4: 【土】 - 引力盘旋、厚重星环
+                        float slowAngle = angle + uTime * 0.1 * (10.0 / (radius + 1.0));
+                        pos.x = cos(slowAngle) * radius;
+                        pos.z = sin(slowAngle) * radius;
+                        pos.y *= 0.1; // 压平呈现厚重感
+                    }
+
+                    vec4 viewPosition = viewMatrix * modelMatrix * vec4(pos, 1.0);
                     gl_Position = projectionMatrix * viewPosition;
-                    gl_PointSize = (20.0 * aRandom + 5.0) * (1.0 / - viewPosition.z);
-                    vElevation = modelPosition.y;
+                    
+                    // 火属性粒子到达顶部后变小消失
+                    float sizeMultiplier = (uType > 0.5 && uType < 1.5) ? (1.0 - (pos.y + 2.0)/8.0) : 1.0;
+                    gl_PointSize = (25.0 * seed + 5.0) * (1.0 / -viewPosition.z) * max(sizeMultiplier, 0.0);
+                    
+                    vElevation = pos.y;
                 }
             `,
             fragmentShader: `
                 uniform vec3 uColor;
+                uniform float uType;
                 varying float vElevation;
+
                 void main() {
-                    float distanceToCenter = distance(gl_PointCoord, vec2(0.5));
-                    float strength = 0.05 / distanceToCenter - 0.1;
-                    vec3 mixedColor = mix(vec3(0.0, 0.1, 0.4), uColor, vElevation * 2.0 + 0.8);
+                    float dist = distance(gl_PointCoord, vec2(0.5));
+                    // 金属性粒子呈硬边缘方形，其他呈柔和圆形
+                    if (uType > 2.5 && uType < 3.5 && dist > 0.5) discard; 
+                    
+                    float strength = (uType > 2.5 && uType < 3.5) ? 1.0 : (0.05 / dist - 0.1);
+                    
+                    // 根据高度微调颜色深度
+                    vec3 mixedColor = mix(uColor * 0.3, uColor, clamp(vElevation * 0.5 + 0.5, 0.0, 1.0));
                     gl_FragColor = vec4(mixedColor, strength);
                 }
             `,
-            transparent: true,
-            depthWrite: false,
-            blending: THREE.AdditiveBlending
+            transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
         });
 
         const particles = new THREE.Points(geometry, material);
         scene.add(particles);
 
-        // 鼠标交互
-        const mouse = new THREE.Vector2();
-        window.addEventListener('mousemove', (event) => {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-            material.uniforms.uMouse.value = mouse;
-            particles.rotation.x = mouse.y * 0.1;
-            particles.rotation.z = -mouse.x * 0.1;
+        // UI 交互：监听按钮点击切换五行状态
+        const buttons = document.querySelectorAll('.btn');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                buttons.forEach(b => {
+                    b.classList.remove('active');
+                    b.style.color = '#fff';
+                    b.style.borderColor = 'rgba(255,255,255,0.3)';
+                });
+                
+                const target = e.target;
+                target.classList.add('active');
+                
+                const type = parseFloat(target.getAttribute('data-type'));
+                const colorHex = target.getAttribute('data-color');
+                const name = target.getAttribute('data-name');
+                const dataStr = target.getAttribute('data-data');
+
+                // 重点：瞬间更新着色器状态
+                target.style.color = colorHex;
+                target.style.borderColor = colorHex;
+                material.uniforms.uType.value = type;
+                material.uniforms.uColor.value.set(colorHex);
+
+                // 根据不同属性调整摄像机自转速度
+                controls.autoRotateSpeed = type === 4 ? 0.1 : (type === 1 ? 1.0 : 0.5);
+
+                updateUI(colorHex, name, dataStr);
+            });
         });
 
         window.addEventListener('resize', () => {
