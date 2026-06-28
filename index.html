@@ -2,278 +2,186 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>纯粹五行 - 自然写实粒子引擎</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>赛博五行 - 能量粒子视界</title>
     <style>
-        /* 全屏铺满，纯黑底色，营造深邃的虚空感 */
-        body { margin: 0; overflow: hidden; background-color: #030303; }
-        canvas { display: block; width: 100vw; height: 100vh; }
-        
-        /* 调试面板：方便切换观察不同的元素 */
-        #ui-panel {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: rgba(255,255,255,0.7);
-            font-family: "Microsoft YaHei", sans-serif;
-            background: rgba(0,0,0,0.6);
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
-            pointer-events: auto;
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505; /* 极深灰背景，凸显发光效果 */
         }
-        h3 { margin: 0 0 10px 0; font-size: 14px; letter-spacing: 2px; color: #dfc18a; }
-        .element-tag { font-size: 12px; margin: 5px 0; display: flex; align-items: center; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.8);
+            font-family: 'Courier New', Courier, monospace;
+            text-align: center;
+            pointer-events: none; /* 让鼠标事件穿透到 3D 画布 */
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
     </style>
 </head>
 <body>
-
-    <div id="ui-panel">
-        <h3>五行气场 · 物理引擎</h3>
-        <div class="element-tag"><div class="dot" style="background:#ff4500;"></div>🔥 火 (Fire) - 升腾热浪</div>
-        <div class="element-tag"><div class="dot" style="background:#2e8b57;"></div>🌳 木 (Wood) - 随机飞叶</div>
-        <div class="element-tag"><div class="dot" style="background:#1e90ff;"></div>💧 水 (Water) - 流体下落</div>
-        <div class="element-tag"><div class="dot" style="background:#daa520;"></div>🪙 金 (Metal) - 悬浮尘埃</div>
-        <div class="element-tag"><div class="dot" style="background:#8b4513;"></div>🪨 土 (Earth) - 重力沉积</div>
+    <div id="canvas-container"></div>
+    <div id="ui-layer">
+        <h1 style="letter-spacing: 10px; font-weight: 300;">壬水 · 润下</h1>
+        <p>滑动鼠标干预能量场</p>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 
-    <script>
-        // =========================================================================
-        // 1. 初始化场景、相机、渲染器
-        // =========================================================================
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // 1. 基础场景设置
+        const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0, 18);
+        // 添加一点全局雾效，增加空间感
+        scene.fog = new THREE.FogExp2(0x050505, 0.3);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 2, 5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 兼顾画质与性能
-        document.body.appendChild(renderer.domElement);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 性能优化
+        // 开启加色混合所需配置
+        renderer.setBlendMode = THREE.AdditiveBlending;
+        container.appendChild(renderer.domElement);
 
-        // 交互坐标流（预留给鼠标或 MediaPipe 手部追踪）
-        const interactionPoint = new THREE.Vector3(999, 999, 0); 
-        const pMouse = new THREE.Vector3(0, 0, 0);
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.5;
 
-        // =========================================================================
-        // 2. 着色器源码 (通用 ShaderMaterial，通过 Uniforms 注入特性)
-        // =========================================================================
-        const vertexShader = `
-            attribute float size;
-            attribute float alpha;
-            varying float vAlpha;
-            void main() {
-                vAlpha = alpha;
-                vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                gl_PointSize = size * (300.0 / -mvPosition.z);
-                gl_Position = projectionMatrix * mvPosition;
-            }
-        `;
+        // 2. 构建粒子系统
+        const particleCount = 100000; // 10万粒子
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const randoms = new Float32Array(particleCount);
 
-        const fragmentShader = `
-            uniform vec3 uColor;
-            varying float vAlpha;
-            void main() {
-                // 画一个柔和的圆形粒子，边缘平滑衰减
-                float dist = distance(gl_PointCoord, vec2(0.5));
-                float strength = 1.0 - smoothstep(0.0, 0.5, dist);
-                gl_FragColor = vec4(uColor, strength * vAlpha);
-            }
-        `;
-
-        // =========================================================================
-        // 3. 五行系统配置与初始化
-        // =========================================================================
-        const config = {
-            fire:  { count: 1000, color: new THREE.Color(1.0, 0.3, 0.05), size: 6.0 },  // 🔥 朱红/亮橙
-            wood:  { count: 800,  color: new THREE.Color(0.15, 0.55, 0.3), size: 5.0 }, // 🌳 竹青
-            water: { count: 1200, color: new THREE.Color(0.1, 0.45, 0.85), size: 4.5 }, // 💧 黛蓝/深海
-            metal: { count: 600,  color: new THREE.Color(0.85, 0.65, 0.2), size: 4.0 }, // 🪙 暗金
-            earth: { count: 1500, color: new THREE.Color(0.5, 0.35, 0.15), size: 5.5 }  // 🪨 赭石/土黄
-        };
-
-        const systems = {};
-
-        function createParticleSystem(type, cfg) {
-            const geo = new THREE.BufferGeometry();
-            const pos = new Float32Array(cfg.count * 3);
-            const sizes = new Float32Array(cfg.count);
-            const alphas = new Float32Array(cfg.count);
-            const extraData = []; // 存放自定义物理属性（速度、生命值等）
-
-            for(let i=0; i<cfg.count; i++) {
-                // 全屏随机分布初始位置
-                pos[i*3] = (Math.random() - 0.5) * 25;
-                pos[i*3+1] = (Math.random() - 0.5) * 15;
-                pos[i*3+2] = (Math.random() - 0.5) * 10;
-
-                sizes[i] = Math.random() * cfg.size + 1.5;
-                alphas[i] = Math.random();
-
-                // 针对不同元素赋予不同的初始物理状态
-                let vel = new THREE.Vector3();
-                let life = Math.random();
-                if (type === 'fire') {
-                    vel.set((Math.random()-0.5)*0.03, Math.random()*0.06 + 0.04, (Math.random()-0.5)*0.03);
-                } else if (type === 'water') {
-                    vel.set((Math.random()-0.5)*0.02, -(Math.random()*0.05 + 0.03), (Math.random()-0.5)*0.02);
-                } else {
-                    vel.set((Math.random()-0.5)*0.02, (Math.random()-0.5)*0.02, (Math.random()-0.5)*0.02);
-                }
-
-                extraData.push({ vel: vel, life: life, seed: Math.random() * 100 });
-            }
-
-            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-            geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-            geo.setAttribute('alpha', new THREE.BufferAttribute(alphas, 1));
-
-            const mat = new THREE.ShaderMaterial({
-                vertexShader: vertexShader,
-                fragmentShader: fragmentShader,
-                uniforms: { uColor: { value: cfg.color } },
-                blending: THREE.AdditiveBlending, // 融合发光
-                depthWrite: false,
-                transparent: true
-            });
-
-            const points = new THREE.Points(geo, mat);
-            scene.add(points);
-
-            systems[type] = { points: points, data: extraData, count: cfg.count };
-        }
-
-        // 批量初始化五行
-        Object.keys(config).forEach(key => createParticleSystem(key, config[key]));
-
-        // =========================================================================
-        // 4. 核心物理与交互动力学逻辑
-        // =========================================================================
-        function updatePhysics() {
-            const time = Date.now() * 0.001;
-
-            Object.keys(systems).forEach(type => {
-                const sys = systems[type];
-                const posAttr = sys.points.geometry.attributes.position;
-                const alphaAttr = sys.points.geometry.attributes.alpha;
-                const posArray = posAttr.array;
-                const alphaArray = alphaAttr.array;
-
-                for(let i=0; i<sys.count; i++) {
-                    let idx = i * 3;
-                    let p = new THREE.Vector3(posArray[idx], posArray[idx+1], posArray[idx+2]);
-                    let d = sys.data[i];
-
-                    // ------------------ A. 基础元素行为动力学 ------------------
-                    if (type === 'fire') {
-                        // 火：向上升腾，生命消耗，加入热空气横向抖动
-                        p.add(d.vel);
-                        p.x += Math.sin(time + d.seed) * 0.015;
-                        d.life -= 0.006;
-                        alphaArray[i] = d.life;
-                        if(d.life <= 0) { // 死亡重置到底部
-                            d.life = 1.0;
-                            p.set((Math.random()-0.5)*10, -8, (Math.random()-0.5)*6);
-                        }
-                    } 
-                    else if (type === 'water') {
-                        // 水：受重力坠落，产生类似波浪的柔和蜿蜒运动
-                        p.add(d.vel);
-                        p.x += Math.cos(time*0.5 + d.seed) * 0.02;
-                        if(p.y < -10) { // 落地重置到顶部
-                            p.y = 10;
-                            p.x = (Math.random()-0.5)*20;
-                        }
-                    } 
-                    else if (type === 'wood') {
-                        // 木：极轻盈，无固定方向，完全在空间中做缓慢的布朗游走
-                        p.x += Math.sin(time * 0.3 + d.seed) * 0.02;
-                        p.y += Math.cos(time * 0.4 + d.seed) * 0.02;
-                        p.z += Math.sin(time * 0.5 + d.seed) * 0.01;
-                        // 边界约束
-                        if(Math.abs(p.x) > 15) p.x *= -0.9;
-                        if(Math.abs(p.y) > 10) p.y *= -0.9;
-                    } 
-                    else if (type === 'metal') {
-                        // 金：重力适中，在空中缓慢下沉，伴有细微的金属粉尘反光闪烁
-                        p.y -= 0.01;
-                        alphaArray[i] = 0.3 + Math.abs(Math.sin(time * 2.0 + d.seed)) * 0.7; // 闪烁效果
-                        if(p.y < -10) p.y = 10;
-                    } 
-                    else if (type === 'earth') {
-                        // 土：极重，默认以极慢的速度向下沉淀堆积
-                        p.y -= 0.015;
-                        if(p.y < -9.5) {
-                            p.y = -9.5 + Math.random()*0.5; // 保持堆积在底部
-                            p.x += (Math.random()-0.5)*0.01; // 缓慢微幅扩散
-                        }
-                    }
-
-                    // ------------------ B. 核心手势/鼠标物理交互接口 ------------------
-                    // 计算粒子到手部交互点的距离
-                    let distToInteract = p.distanceTo(interactionPoint);
-                    if (distToInteract < 3.5) {
-                        // 计算推力方向向量
-                        let forceDir = new THREE.Vector3().subVectors(p, interactionPoint).normalize();
-                        // 距离越近，推力越猛
-                        let forceFactor = (3.5 - distToInteract) * 0.12; 
-
-                        // 差异化反馈：金和土沉重不易被推开，火和木极其敏感
-                        if (type === 'earth' || type === 'metal') forceFactor *= 0.3;
-                        if (type === 'fire' || type === 'wood') forceFactor *= 1.5;
-
-                        p.addScaledVector(forceDir, forceFactor);
-                    }
-
-                    // 将计算完的最新坐标写回物理缓冲区
-                    posArray[idx] = p.x;
-                    posArray[idx+1] = p.y;
-                    posArray[idx+2] = p.z;
-                }
-
-                posAttr.needsUpdate = true;
-                alphaAttr.needsUpdate = true;
-                
-                // 让整体星盘带着极微弱的旋转，增强立体空间深度
-                sys.points.rotation.y += 0.0005;
-            });
-        }
-
-        // =========================================================================
-        // 5. 动画主循环与视口自适应
-        // =========================================================================
-        function animate() {
-            requestAnimationFrame(animate);
-            updatePhysics();
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        // 监听鼠标移动，将其映射到 3D 空间的交互平面上
-        window.addEventListener('mousemove', (e) => {
-            let vec = new THREE.Vector3();
-            let pos = new THREE.Vector3();
+        // 随机在圆盘范围内生成粒子
+        for (let i = 0; i < particleCount; i++) {
+            const r = Math.random() * 4;
+            const theta = Math.random() * Math.PI * 2;
             
-            vec.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1, 0.5);
-            vec.unproject(camera);
-            vec.sub(camera.position).normalize();
+            positions[i * 3] = r * Math.cos(theta);     // x
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 0.5; // y (初始厚度)
+            positions[i * 3 + 2] = r * Math.sin(theta); // z
             
-            let distance = -camera.position.z / vec.z;
-            interactionPoint.copy(camera.position).addScaledVector(vec, distance);
+            // 为每个粒子赋予一个随机种子，用于 Shader 中的差异化运算
+            randoms[i] = Math.random();
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
+
+        // 3. 核心：编写 Shader 材质
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uColor: { value: new THREE.Color('#00ffff') }, // 赛博青色，代表水/木
+                uMouse: { value: new THREE.Vector2(0, 0) }      // 预留交互接口
+            },
+            vertexShader: `
+                uniform float uTime;
+                attribute float aRandom;
+                varying float vElevation;
+
+                void main() {
+                    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+                    
+                    // 核心动力学：利用正弦余弦构建漩涡力场
+                    float angle = atan(modelPosition.x, modelPosition.z);
+                    float distance = length(modelPosition.xz);
+                    
+                    // 随时间推移的螺旋波动
+                    float wave = sin(distance * 3.0 - uTime * 2.0 + aRandom * 6.28) * 0.2;
+                    modelPosition.y += wave;
+                    
+                    // 粒子越靠近中心越高，越向外越平缓
+                    modelPosition.y += (1.0 / (distance + 0.5)) * 0.5 - 0.5;
+
+                    vec4 viewPosition = viewMatrix * modelPosition;
+                    vec4 projectedPosition = projectionMatrix * viewPosition;
+                    gl_Position = projectedPosition;
+
+                    // 粒子大小衰减：近大远小，且叠加一点随机闪烁
+                    gl_PointSize = (30.0 * aRandom + 10.0) * (1.0 / - viewPosition.z);
+                    
+                    // 传递给片元着色器的高度数据，用于颜色渐变
+                    vElevation = modelPosition.y;
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 uColor;
+                varying float vElevation;
+
+                void main() {
+                    // 将方形粒子裁剪成圆形，并制作发光边缘柔和度
+                    float distanceToCenter = distance(gl_PointCoord, vec2(0.5));
+                    float strength = 0.05 / distanceToCenter - 0.1;
+                    
+                    // 基于粒子的高低（Y轴）微调颜色，实现纵深感
+                    vec3 mixedColor = mix(vec3(0.0, 0.1, 0.4), uColor, vElevation * 2.0 + 0.8);
+                    
+                    gl_FragColor = vec4(mixedColor, strength);
+                }
+            `,
+            transparent: true,
+            depthWrite: false, // 关键：关闭深度写入，开启加色混合产生辉光
+            blending: THREE.AdditiveBlending
         });
 
-        // 鼠标移出屏幕时，将交互点撤离，防止吸引或排斥残留
-        window.addEventListener('mouseleave', () => {
-            interactionPoint.set(999, 999, 0);
+        const particles = new THREE.Points(geometry, material);
+        scene.add(particles);
+
+        // 4. 交互：监听鼠标位置 (为后续接入 MediaPipe 手势预留)
+        const mouse = new THREE.Vector2();
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            material.uniforms.uMouse.value = mouse;
+            
+            // 简单的鼠标互动：轻微改变摄像机角度或粒子系统的倾斜
+            particles.rotation.x = mouse.y * 0.2;
+            particles.rotation.z = -mouse.x * 0.2;
         });
 
-        // 保证窗口大小改变时，画布和相机比例不失真
+        // 窗口自适应
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
+        // 5. 动画循环
+        const clock = new THREE.Clock();
+        function animate() {
+            const elapsedTime = clock.getElapsedTime();
+            
+            // 更新 Shader 中的时间 Uniform
+            material.uniforms.uTime.value = elapsedTime;
+            
+            controls.update();
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+        animate();
     </script>
 </body>
 </html>
