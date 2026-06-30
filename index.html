@@ -3,214 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alpha-Omega: 赛博命盘详细解析</title>
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <title>Alpha-Omega V12 算力全开 | 量化锚定版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #030303; color: #fff; font-family: 'Courier New', Courier, monospace; }
-        #canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
+        body { background-color: #050b14; color: #c9d1d9; font-family: -apple-system, sans-serif; overflow-x: hidden; }
+        .profit-green { color: #10b981; }
+        .loss-red { color: #ef4444; }
+        .market-closed { color: #6e7681; }
+        .glass-panel { background: rgba(13, 17, 23, 0.7); border: 1px solid #1f2937; border-radius: 12px; transition: all 0.3s ease; }
+        .panel-closed { background: rgba(10, 12, 16, 0.9); border: 1px solid #30363d; opacity: 0.7; filter: grayscale(80%); }
+        ::-webkit-scrollbar { display: none; }
         
-        #ui-layer {
-            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10;
-            display: flex; flex-direction: row; /* 改为左右布局 */
-            justify-content: center; align-items: center; gap: 50px;
-            pointer-events: none;
+        /* 智能选股扫描动画 */
+        .scan-line {
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(to right, transparent, #3b82f6, transparent);
+            animation: scan 2s infinite linear;
+            box-shadow: 0 0 10px #3b82f6;
         }
-
-        /* 左侧：视觉交互区 */
-        #visual-section {
-            display: flex; flex-direction: column; align-items: center; position: relative;
+        @keyframes scan {
+            0% { transform: translateY(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(60px); opacity: 0; }
         }
-        #element-title { font-size: 32px; letter-spacing: 12px; font-weight: 300; margin-bottom: 5px; transition: all 0.5s; text-shadow: 0 0 20px rgba(255,255,255,0.5); }
-        .subtitle { font-size: 12px; color: rgba(255,255,255,0.5); letter-spacing: 2px; margin-bottom: 20px;}
-        #chart-container {
-            pointer-events: auto; width: 400px; height: 400px;
-            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.02) 0%, transparent 70%);
-            border-radius: 50%; transition: box-shadow 0.5s, border-color 0.5s;
-        }
-
-        /* 右侧：详细解析面板 (新增) */
-        #analysis-panel {
-            width: 450px; height: 500px;
-            background: rgba(0, 15, 20, 0.7);
-            border: 1px solid rgba(0, 255, 255, 0.3);
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1) inset;
-            backdrop-filter: blur(10px);
-            padding: 30px; box-sizing: border-box;
-            display: none; /* 初始隐藏 */
-            flex-direction: column;
-            pointer-events: auto;
-            position: relative;
-        }
-        
-        /* 面板四角的科幻修饰 */
-        #analysis-panel::before, #analysis-panel::after { content: ''; position: absolute; width: 20px; height: 20px; border: 2px solid transparent; }
-        #analysis-panel::before { top: 0; left: 0; border-top-color: #00ffff; border-left-color: #00ffff; }
-        #analysis-panel::after { bottom: 0; right: 0; border-bottom-color: #00ffff; border-right-color: #00ffff; }
-
-        .panel-header { font-size: 18px; font-weight: bold; border-bottom: 1px dashed rgba(255,255,255,0.3); padding-bottom: 10px; margin-bottom: 20px; letter-spacing: 2px; display: flex; justify-content: space-between;}
-        .status-blinking { animation: blink 1s infinite; font-size: 12px; color: #00ff66; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-        /* 打字机文本容器 */
-        #typewriter-text {
-            font-size: 14px; line-height: 1.8; color: #e0e0e0;
-            overflow-y: auto; flex-grow: 1; padding-right: 10px;
-            text-shadow: 0 0 2px rgba(255,255,255,0.2);
-        }
-        /* 自定义滚动条 */
-        #typewriter-text::-webkit-scrollbar { width: 5px; }
-        #typewriter-text::-webkit-scrollbar-thumb { background: rgba(0, 255, 255, 0.5); }
-
-        /* 底部控制台 */
-        #input-console {
-            position: absolute; bottom: 5%; display: flex; flex-direction: column; align-items: center; gap: 10px;
-            pointer-events: auto; background: rgba(0, 0, 0, 0.6); padding: 15px 30px;
-            border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(5px);
-        }
-        .input-group { display: flex; gap: 15px; align-items: center; }
-        input[type="datetime-local"] { background: rgba(0, 0, 0, 0.5); border: 1px solid #00ffff; color: #00ffff; padding: 8px 15px; font-family: inherit; font-size: 14px; outline: none; }
-        ::-webkit-calendar-picker-indicator { filter: invert(1) hue-rotate(180deg); cursor: pointer; }
-        .btn-calc { background: rgba(0,255,255,0.1); border: 1px solid #00ffff; color: #00ffff; padding: 8px 25px; font-family: inherit; font-size: 14px; cursor: pointer; transition: all 0.3s; font-weight: bold; }
-        .btn-calc:hover { background: rgba(0, 255, 255, 0.3); box-shadow: 0 0 15px #00ffff inset; }
     </style>
 </head>
-<body>
-
-    <div id="canvas-container"></div>
+<body class="p-4 flex flex-col gap-4 min-h-screen">
     
-    <div id="ui-layer">
-        <div id="visual-section">
-            <div id="element-title">输入时空坐标</div>
-            <div class="subtitle">AWAITING TEMPORAL DATA</div>
-            <div id="chart-container"></div>
+    <header class="glass-panel p-4 flex justify-between items-center border-b-2 border-blue-500">
+        <div>
+            <h1 class="text-xl font-bold text-blue-400" style="text-shadow: 0 0 10px rgba(88,166,255,0.5);">Alpha-Omega 量化终端 V12</h1>
+            <p class="text-xs text-green-400 mt-1" id="sync-status">● 算力全开，实盘数据强制锚定中</p>
         </div>
+        <div class="text-right text-xs font-mono text-gray-500" id="local-clock">
+            --:--:--
+        </div>
+    </header>
 
-        <div id="analysis-panel">
-            <div class="panel-header">
-                <span id="panel-title">流年大运推演模型</span>
-                <span class="status-blinking">● LIVE DATA</span>
+    <div class="glass-panel p-4 relative overflow-hidden border-l-4 border-yellow-500">
+        <div class="scan-line"></div>
+        <div class="flex justify-between items-center relative z-10">
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
+                <h2 class="text-sm font-bold text-yellow-500">AI 量化突击扫描系统 (DeepSeek-Omega 核心)</h2>
             </div>
-            <div id="typewriter-text"></div>
+            <span class="text-xs text-gray-400">实时过滤 5300+ 标的</span>
+        </div>
+        <div class="mt-3 bg-black/50 rounded p-3 font-mono text-sm border border-gray-800">
+            <p id="ai-log" class="text-gray-300">正在初始化神经网络参数...</p>
         </div>
     </div>
 
-    <div id="input-console">
-        <div class="input-group">
-            <input type="datetime-local" id="birth-input" value="1998-08-08T08:00">
-            <button class="btn-calc" id="calc-btn">载入矩阵</button>
-        </div>
-    </div>
+    <main id="market-container" class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto pb-4">
+        </main>
 
     <script>
-        // --- 1. ECharts 初始化 ---
-        const myChart = echarts.init(document.getElementById('chart-container'));
-        let currentOption = {
-            backgroundColor: 'transparent',
-            radar: {
-                indicator: [ {name:'水', max:100}, {name:'火', max:100}, {name:'木', max:100}, {name:'金', max:100}, {name:'土', max:100} ],
-                center: ['50%', '50%'], radius: '60%', shape: 'polygon', splitNumber: 4,
-                axisName: { color: '#ffffff', fontSize: 14 },
-                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-                splitArea: { show: false },
-                axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
-            },
-            series: [{ type: 'radar', data: [{ value: [20,20,20,20,20], itemStyle:{color:'#fff'}, lineStyle:{color:'#fff', width:2}, areaStyle:{color:'rgba(255,255,255,0.1)'} }] }]
-        };
-        myChart.setOption(currentOption);
-
-        // --- 2. 模拟大模型文案生成库 ---
-        // 结合传统八字与量化金融术语的赛博断语
-        const textDatabase = {
-            wealth: [
-                "【流动性池分析】当前偏财星高透，适合捕捉高波动率标的。加密资产维度存在短期套利空间，但切忌在链上进行过高的杠杆博弈。",
-                "【资产矩阵推演】正财稳健，日主承压。建议收缩投资敞口，将资产转移至主流价值网络（如BTC或核心蓝筹），等待下一次大级别共识周期。",
-                "【波段机会预警】食神生财，短期内你对数据和盘感的直觉将极度敏锐，适合通过自动化网格或高频脚本捕获市场摩擦收益。"
-            ],
-            career: [
-                "【架构演进节点】官杀印相生，事业线进入重构期。如果是独立开发，本季度有望跑通最小可行性产品（MVP），并获得极客圈层的流量注入。",
-                "【算力分配建议】比劫夺财，团队协作可能出现代码合并冲突或利益分配不均。建议提升个人的单兵作战能力，深耕底层技术栈。"
-            ],
-            fortune: [
-                "【胜率期望演算】本周期内，印星护体，你的直觉判断准确率（如重大赛事比分预测、波胆推演）上升 23%。但切记，概率学规律不可逆，做好仓位管理。",
-                "【时空风水校准】近期最佳能量接入方位为正东方（木属性）。在进行高强度的代码构建或市场复盘时，可将显示器矩阵朝向此方位以稳定神经突触。"
-            ]
+        // ==========================================
+        // 配置中心：支持无限扩展的资产池
+        // type: 1(Crypto 7x24), 2(美股), 3(A股)
+        // ==========================================
+        const assets = {
+            trx:  { name: 'TRX/USDT', code: 'CRYPTO', price: 0.11500, vol: 0.0001, dec: 5, color: 'blue', type: 1, history: Array(40).fill(0.11500), isOpen: true },
+            tsla: { name: '特斯拉', code: 'TSLA', price: 245.78, vol: 0.15, dec: 2, color: 'purple', type: 2, history: Array(40).fill(245.78), isOpen: false },
+            sse:  { name: '上证指数', code: '000001', price: 3106.25, vol: 1.5, dec: 2, color: 'red', type: 3, history: Array(40).fill(3106.25), isOpen: false },
+            moutai:{ name: '贵州茅台', code: '600519', price: 1680.50, vol: 1.2, dec: 2, color: 'red', type: 3, history: Array(40).fill(1680.50), isOpen: false },
+            byd:  { name: '比亚迪', code: '002594', price: 258.30, vol: 0.8, dec: 2, color: 'red', type: 3, history: Array(40).fill(258.30), isOpen: false },
+            catl: { name: '宁德时代', code: '300750', price: 205.10, vol: 0.6, dec: 2, color: 'red', type: 3, history: Array(40).fill(205.10), isOpen: false },
+            seres:{ name: '赛力斯', code: '601127', price: 92.45, vol: 0.9, dec: 2, color: 'red', type: 3, history: Array(40).fill(92.45), isOpen: false }
         };
 
-        // 获取基于哈希的随机文本
-        function generateCyberFortune(hash) {
-            const getStr = (arr, offset) => arr[(hash + offset) % arr.length];
-            return `[核心数据载入完毕...]\n\n` +
-                   `> 命局概览：\n日主已确立，五行能量分布呈现不均衡态。底层逻辑架构带有极强的反共识特征。\n\n` +
-                   `> 财富与量化维度：\n${getStr(textDatabase.wealth, 1)}\n\n` +
-                   `> 事业与开发维度：\n${getStr(textDatabase.career, 2)}\n\n` +
-                   `> 博弈与胜率期望：\n${getStr(textDatabase.fortune, 3)}\n\n` +
-                   `[SYSTEM WARNING]: 命运非线性函数，以上仅为高概率路径预测。`;
-        }
-
-        // --- 3. 打字机特效引擎 ---
-        let typewriterTimeout;
-        function typeWriterEffect(text, elementId, speed = 30) {
-            clearTimeout(typewriterTimeout);
-            const el = document.getElementById(elementId);
-            el.innerHTML = '';
-            let i = 0;
-            
-            function type() {
-                if (i < text.length) {
-                    let char = text.charAt(i);
-                    // 处理换行符
-                    if (char === '\n') {
-                        el.innerHTML += '<br>';
-                    } else {
-                        el.innerHTML += char;
-                    }
-                    // 自动滚动到底部
-                    el.scrollTop = el.scrollHeight;
-                    i++;
-                    typewriterTimeout = setTimeout(type, speed);
-                }
-            }
-            type();
-        }
-
-        // --- 4. 核心交互绑定 ---
-        document.getElementById('calc-btn').addEventListener('click', () => {
-            const dateStr = document.getElementById('birth-input').value;
-            if(!dateStr) return;
-
-            // 1. 解析面板展示
-            const panel = document.getElementById('analysis-panel');
-            panel.style.display = 'flex';
-            
-            // 2. 模拟前端哈希演算
-            const timestamp = new Date(dateStr).getTime();
-            let hash = timestamp.toString(16).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            
-            // 这里为了演示，固定赋予一种高科技主题色（比如偏火的赤红色，或者你可以沿用之前五行切换颜色的逻辑）
-            const themeColor = '#00ffff'; 
-            
-            // 3. 驱动雷达图更新 (模拟数据)
-            currentOption.series[0].data[0].value = [
-                (hash % 40) + 10, (hash % 50) + 20, (hash % 30) + 15, (hash % 60) + 5, (hash % 45) + 10
-            ];
-            currentOption.radar.axisName.color = themeColor;
-            currentOption.series[0].data[0].itemStyle.color = themeColor;
-            currentOption.series[0].data[0].lineStyle.color = themeColor;
-            currentOption.series[0].data[0].areaStyle.color = `rgba(0,255,255,0.2)`;
-            myChart.setOption(currentOption);
-
-            // 4. 生成运势文本并启动打字机特效
-            const detailedFortuneText = generateCyberFortune(hash);
-            document.getElementById('panel-title').style.color = themeColor;
-            document.getElementById('analysis-panel').style.borderColor = themeColor;
-            
-            // 稍微延迟一下，模拟网络请求大模型的时间
-            document.getElementById('typewriter-text').innerHTML = '<span style="color:#00ff66">正在连接量子算力中心获取推演报告...</span>';
-            setTimeout(() => {
-                typeWriterEffect(detailedFortuneText, 'typewriter-text', 40);
-            }, 800);
+        // ==========================================
+        // UI 渲染引擎：动态生成行情面板
+        // ==========================================
+        const container = document.getElementById('market-container');
+        Object.keys(assets).forEach(key => {
+            const asset = assets[key];
+            const html = `
+                <div id="panel-${key}" class="glass-panel p-3 flex flex-col gap-2 relative overflow-hidden border-l-4 border-${asset.color}-500">
+                    <div class="flex justify-between items-end z-10">
+                        <div>
+                            <p class="text-xs text-${asset.color}-400 font-mono mb-1">${asset.code} | ${asset.name}</p>
+                            <div id="price-${key}" class="text-4xl font-mono font-bold profit-green transition-colors">${asset.price.toFixed(asset.dec)}</div>
+                        </div>
+                        <div class="text-right"><p id="trend-${key}" class="text-sm font-bold profit-green">SYNCED</p></div>
+                    </div>
+                    <div class="h-24 w-full bg-black/40 rounded border border-gray-800 shadow-inner relative z-10">
+                        <svg id="svg-${key}" class="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                            <polyline id="line-${key}" fill="none" stroke="#10b981" stroke-width="2" vector-effect="non-scaling-stroke"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
         });
-    </script>
 
-    </body>
+        // ==========================================
+        // 核心：时间锁机制与市场状态强制渲染
+        // ==========================================
+        function checkAndRenderMarketStatus() {
+            const now = new Date();
+            const day = now.getDay();
+            const hours = now.getHours();
+            const mins = now.getMinutes();
+            const timeVal = hours * 100 + mins;
+            const isWeekend = (day === 0 || day === 6);
+
+            document.getElementById('local-clock').innerText = now.toLocaleTimeString('en-US', { hour12: false }) + ' (UTC+8)';
+
+            Object.keys(assets).forEach(key => {
+                const asset = assets[key];
+                
+                // 判断开休市逻辑
+                if (asset.type === 1) { 
+                    asset.isOpen = true; // Crypto 7x24
+                } else if (asset.type === 3) { 
+                    // A股
+                    asset.isOpen = !isWeekend && ((timeVal >= 930 && timeVal <= 1130) || (timeVal >= 1300 && timeVal <= 1500));
+                } else if (asset.type === 2) { 
+                    // 美股夏令时 (简易逻辑)
+                    if (!isWeekend && timeVal >= 2130 && timeVal <= 2359) asset.isOpen = true;
+                    else if (day >= 2 && day <= 6 && timeVal >= 0 && timeVal <= 400) asset.isOpen = true;
+                    else asset.isOpen = false;
+                }
+
+                // 更新 UI 样式
+                const panel = document.getElementById(`panel-${key}`);
+                const trendEl = document.getElementById(`trend-${key}`);
+                const priceEl = document.getElementById(`price-${key}`);
+                const lineEl = document.getElementById(`line-${key}`);
+                
+                if (!asset.isOpen) {
+                    panel.classList.add('panel-closed');
+                    trendEl.innerText = "CLOSED";
+                    trendEl.className = "text-sm font-bold market-closed";
+                    priceEl.className = `text-4xl font-mono font-bold market-closed`;
+                    lineEl.setAttribute('stroke', '#6e7681'); 
+                } else {
+                    panel.classList.remove('panel-closed');
+                }
+            });
+        }
+
+        // ==========================================
+        // 原生高频推演渲染引擎 (价格跳动模拟)
+        // ==========================================
+        function updateTick() {
+            checkAndRenderMarketStatus(); 
+
+            Object.keys(assets).forEach(key => {
+                const asset = assets[key];
+                if (!asset.isOpen) return;
+                
+                const change = (Math.random() - 0.5) * asset.vol;
+                const oldPrice = asset.price;
+                let displayPrice = +(asset.price + change).toFixed(asset.dec);
+                asset.price = displayPrice; // 更新基准价，让漫步更真实
+
+                asset.history.push(displayPrice);
+                asset.history.shift();
+
+                const priceEl = document.getElementById(`price-${key}`);
+                const trendEl = document.getElementById(`trend-${key}`);
+                const lineEl = document.getElementById(`line-${key}`);
+                
+                const isUp = displayPrice >= oldPrice;
+                const colorClass = isUp ? "profit-green" : "loss-red";
+                const hexColor = isUp ? "#10b981" : "#ef4444";
+
+                priceEl.innerText = displayPrice.toLocaleString('en-US', { minimumFractionDigits: asset.dec, maximumFractionDigits: asset.dec });
+                priceEl.className = `text-4xl font-mono font-bold transition-colors ${colorClass}`;
+                
+                trendEl.innerText = isUp ? "BUY+" : "SELL-";
+                trendEl.className = `text-sm font-bold ${colorClass}`;
+                lineEl.setAttribute('stroke', hexColor);
+
+                const min = Math.min(...asset.history);
+                const max = Math.max(...asset.history);
+                const range = max - min || 0.0001;
+
+                const points = asset.history.map((val, i) => {
+                    const x = (i / 39) * 100; 
+                    const y = 100 - ((val - min) / range) * 100; 
+                    return `${x},${y}`;
+                }).join(' ');
+
+                document.getElementById(`svg-${key}`).setAttribute('viewBox', `0 0 100 100`);
+                lineEl.setAttribute('points', points);
+            });
+
+            setTimeout(() => requestAnimationFrame(updateTick), 800); // 调慢了刷新率避免瞎眼
+        }
+
+        // ==========================================
+        // AI 智能选股系统 (伪造量化逻辑)
+        // ==========================================
+        const aiLog = document.getElementById('ai-log');
+        const aSharePool = Object.keys(assets).filter(k => assets[k].type === 3 && k !== 'sse');
+        const actions = ["主力大单抢筹", "MACD底背离", "突破箱体上沿", "量价齐升", "暗盘资金异动"];
+        
+        function triggerAIAnalysis() {
+            // 随机抽取一个 A 股标的
+            const randomKey = aSharePool[Math.floor(Math.random() * aSharePool.length)];
+            const target = assets[randomKey];
+            const action = actions[Math.floor(Math.random() * actions.length)];
+            const winRate = (85 + Math.random() * 14).toFixed(1); // 85% - 99% 胜率
+            const capital = (Math.random() * 10 + 1).toFixed(1); // 1-11 亿资金
+
+            const isBuy = Math.random() > 0.2; // 80% 概率出买入信号
+
+            if(isBuy) {
+                aiLog.innerHTML = `<span class="profit-green font-bold">[ 强力买入 ]</span> 发现 <span class="text-white">${target.name} (${target.code})</span> 出现 <span class="text-yellow-400">${action}</span>。<br>> 算法预测胜率：<span class="text-blue-400">${winRate}%</span> | 净流入资金：<span class="text-red-400">+${capital} 亿</span>`;
+            } else {
+                aiLog.innerHTML = `<span class="text-blue-400">[ 深度洗盘 ]</span> 监测到 <span class="text-white">${target.name}</span> 散户筹码松动，等待更好的建仓击球点...`;
+            }
+        }
+
+        // 引擎点火
+        updateTick();
+        setInterval(triggerAIAnalysis, 3500); // 每 3.5 秒刷新一次AI日志
+
+    </script>
+</body>
 </html>
